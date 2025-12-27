@@ -1,13 +1,20 @@
 import { format } from 'date-fns';
-import { User, Calendar, AlertTriangle, TrendingUp } from 'lucide-react';
+import { Calendar, AlertTriangle, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { Patient } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
+interface PatientData {
+  id: string;
+  name: string;
+  email?: string;
+  avatar?: string;
+  dateOfBirth?: string;
+}
+
 interface PatientCardProps {
-  patient: Patient;
+  patient: PatientData;
   nextSession?: Date;
   riskLevel?: 'low' | 'medium' | 'high';
   lastImprovement?: number;
@@ -29,7 +36,7 @@ export function PatientCard({ patient, nextSession, riskLevel, lastImprovement }
       <CardContent className="p-5">
         <div className="flex items-start gap-4">
           {/* Avatar */}
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary-light">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/10">
             <span className="text-sm font-semibold text-primary">
               {patient.name.split(' ').map(n => n[0]).join('')}
             </span>
@@ -40,7 +47,9 @@ export function PatientCard({ patient, nextSession, riskLevel, lastImprovement }
             <div className="flex items-start justify-between gap-2">
               <div>
                 <h3 className="font-semibold">{patient.name}</h3>
-                <p className="text-sm text-muted-foreground">{patient.email}</p>
+                {patient.email && (
+                  <p className="text-sm text-muted-foreground">{patient.email}</p>
+                )}
               </div>
               {riskLevel && (
                 <Badge variant={getRiskVariant()}>

@@ -1,90 +1,153 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import { User, UserRole } from '@/types';
+import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { User as SupabaseUser } from '@supabase/supabase-js';
+
+type UserRole = 'PATIENT' | 'DOCTOR';
+
+interface Profile {
+  id: string;
+  name: string;
+  email: string | null;
+  avatar_url: string | null;
+  date_of_birth: string | null;
+  specialization: string | null;
+  license_number: string | null;
+  primary_doctor_id: string | null;
+}
+
+interface AppUser {
+  id: string;
+  email: string;
+  name: string;
+  role: UserRole | null;
+  avatar_url?: string | null;
+  specialization?: string | null;
+  license_number?: string | null;
+  primary_doctor_id?: string | null;
+}
 
 interface AuthContextType {
-  user: User | null;
+  user: AppUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, name: string, role: UserRole) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock users for development
-const mockUsers: User[] = [
-  {
-    id: 'patient-1',
-    email: 'patient@demo.com',
-    name: 'Sarah Johnson',
-    role: 'PATIENT',
-    created_at: '2024-01-15T10:00:00Z',
-  },
-  {
-    id: 'doctor-1',
-    email: 'doctor@demo.com',
-    name: 'Dr. Michael Chen',
-    role: 'DOCTOR',
-    created_at: '2023-06-01T10:00:00Z',
-  },
-];
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [user, setUser] = useState<AppUser | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchUserData = useCallback(async (supabaseUser: SupabaseUser): Promise<AppUser | null> => {
+    // Fetch profile
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', supabaseUser.id)
+      .maybeSingle();
+
+    // Fetch role
+    const { data: roleData } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', supabaseUser.id)
+      .maybeSingle();
+
+    return {
+      id: supabaseUser.id,
+      email: supabaseUser.email || '',
+      name: (profile as Profile)?.name || supabaseUser.email || '',
+      role: roleData?.role as UserRole || null,
+      avatar_url: (profile as Profile)?.avatar_url,
+      specialization: (profile as Profile)?.specialization,
+      license_number: (profile as Profile)?.license_number,
+      primary_doctor_id: (profile as Profile)?.primary_doctor_id,
+    };
+  }, []);
+
+  useEffect(() => {
+    // Get initial session
+    const initAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const userData = await fetchUserData(session.user);
+          setUser(userData);
+        }
+      } catch (error) {
+        console.error('Auth init error:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        const userData = await fetchUserData(session.user);
+        setUser(userData);
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [fetchUserData]);
 
   const login = useCallback(async (email: string, password: string) => {
     setIsLoading(true);
-    
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    const foundUser = mockUsers.find(u => u.email === email);
-    
-    if (foundUser && password === 'demo123') {
-      setUser(foundUser);
-      localStorage.setItem('auth_user', JSON.stringify(foundUser));
-    } else {
-      throw new Error('Invalid credentials. Use demo accounts: patient@demo.com or doctor@demo.com with password: demo123');
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+    } finally {
+      setIsLoading(false);
     }
-    
-    setIsLoading(false);
   }, []);
 
   const register = useCallback(async (email: string, password: string, name: string, role: UserRole) => {
     setIsLoading(true);
-    
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    const newUser: User = {
-      id: `${role.toLowerCase()}-${Date.now()}`,
-      email,
-      name,
-      role,
-      created_at: new Date().toISOString(),
-    };
-    
-    setUser(newUser);
-    localStorage.setItem('auth_user', JSON.stringify(newUser));
-    setIsLoading(false);
-  }, []);
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { name },
+        },
+      });
+      
+      if (error) throw error;
+      
+      if (data.user) {
+        // Insert user role
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .insert({ user_id: data.user.id, role });
+        
+        if (roleError) {
+          console.error('Failed to set user role:', roleError);
+        }
 
-  const logout = useCallback(() => {
-    setUser(null);
-    localStorage.removeItem('auth_user');
-  }, []);
-
-  // Check for existing session on mount
-  React.useEffect(() => {
-    const stored = localStorage.getItem('auth_user');
-    if (stored) {
-      try {
-        setUser(JSON.parse(stored));
-      } catch {
-        localStorage.removeItem('auth_user');
+        // Update profile with additional info if doctor
+        if (role === 'DOCTOR') {
+          await supabase
+            .from('profiles')
+            .update({ name })
+            .eq('id', data.user.id);
+        }
       }
+    } finally {
+      setIsLoading(false);
     }
+  }, []);
+
+  const logout = useCallback(async () => {
+    await supabase.auth.signOut();
+    setUser(null);
   }, []);
 
   return (
