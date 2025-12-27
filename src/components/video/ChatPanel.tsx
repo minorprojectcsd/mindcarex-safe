@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSocket } from '@/hooks/useSocket';
-import { ChatMessage } from '@/types';
+import { ChatMessage, Message } from '@/types';
 import { exportChatTranscript } from '@/services/api';
 import { cn } from '@/lib/utils';
 
@@ -16,21 +16,37 @@ interface ChatPanelProps {
   onClose: () => void;
 }
 
+// Convert Message to ChatMessage for export
+const toChatMessage = (msg: Message): ChatMessage => ({
+  id: msg.id,
+  sessionId: msg.session_id,
+  senderId: msg.sender_id,
+  senderRole: msg.senderRole || 'PATIENT',
+  content: msg.content,
+  timestamp: msg.created_at,
+  isRead: msg.isRead || false,
+});
+
 export function ChatPanel({ sessionId, onClose }: ChatPanelProps) {
   const { user } = useAuth();
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const { sendMessage, sendTyping, isConnected } = useSocket(sessionId, user?.id || '', {
-    onMessage: (message) => {
-      setMessages((prev) => [...prev, message]);
-    },
-    onTyping: ({ isTyping: typing }) => {
-      setIsTyping(typing);
-    },
-  });
+  const { sendMessage, sendTyping, isConnected } = useSocket(
+    sessionId,
+    user?.id || '',
+    user?.role || 'PATIENT',
+    {
+      onMessage: (message) => {
+        setMessages((prev) => [...prev, message]);
+      },
+      onTyping: ({ isTyping: typing }) => {
+        setIsTyping(typing);
+      },
+    }
+  );
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -59,7 +75,7 @@ export function ChatPanel({ sessionId, onClose }: ChatPanelProps) {
   };
 
   const handleExport = () => {
-    exportChatTranscript(messages, 'txt');
+    exportChatTranscript(messages.map(toChatMessage), 'txt');
   };
 
   return (
@@ -95,7 +111,7 @@ export function ChatPanel({ sessionId, onClose }: ChatPanelProps) {
               </div>
             ) : (
               messages.map((message) => {
-                const isOwn = message.senderId === user?.id;
+                const isOwn = message.sender_id === user?.id;
                 return (
                   <div
                     key={message.id}
@@ -116,7 +132,7 @@ export function ChatPanel({ sessionId, onClose }: ChatPanelProps) {
                           isOwn ? 'text-primary-foreground/70' : 'text-muted-foreground'
                         )}
                       >
-                        {format(new Date(message.timestamp), 'h:mm a')}
+                        {format(new Date(message.created_at), 'h:mm a')}
                       </p>
                     </div>
                   </div>

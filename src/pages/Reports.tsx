@@ -149,11 +149,11 @@ export default function Reports() {
                       </div>
                       <div>
                         <p className="font-medium">
-                          {getPatientName(session.patientId)}
+                          {getPatientName(session.patient_id)}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          {format(new Date(session.scheduledAt), 'MMMM d, yyyy')} •{' '}
-                          {session.duration} min
+                          {format(new Date(session.start_time || new Date()), 'MMMM d, yyyy')} •{' '}
+                          {session.duration || 50} min
                         </p>
                       </div>
                     </div>
