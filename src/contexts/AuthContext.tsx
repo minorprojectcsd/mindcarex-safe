@@ -19,14 +19,14 @@ const mockUsers: User[] = [
     email: 'patient@demo.com',
     name: 'Sarah Johnson',
     role: 'PATIENT',
-    createdAt: '2024-01-15T10:00:00Z',
+    created_at: '2024-01-15T10:00:00Z',
   },
   {
     id: 'doctor-1',
     email: 'doctor@demo.com',
     name: 'Dr. Michael Chen',
     role: 'DOCTOR',
-    createdAt: '2023-06-01T10:00:00Z',
+    created_at: '2023-06-01T10:00:00Z',
   },
 ];
 
@@ -62,7 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email,
       name,
       role,
-      createdAt: new Date().toISOString(),
+      created_at: new Date().toISOString(),
     };
     
     setUser(newUser);

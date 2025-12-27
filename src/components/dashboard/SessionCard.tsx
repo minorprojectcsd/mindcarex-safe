@@ -13,14 +13,26 @@ interface SessionCardProps {
   onJoin?: () => void;
 }
 
+// Helper to get scheduled time from either Session or Schedule
+const getScheduledTime = (data: Session | Schedule): string => {
+  if ('scheduled_time' in data && data.scheduled_time) {
+    return data.scheduled_time;
+  }
+  if ('start_time' in data && data.start_time) {
+    return data.start_time;
+  }
+  return new Date().toISOString();
+};
+
 export function SessionCard({ session, schedule, showPatientName = false, onJoin }: SessionCardProps) {
   const navigate = useNavigate();
   
   const data = session || schedule;
   if (!data) return null;
 
-  const scheduledDate = new Date(data.scheduledAt);
-  const isUpcoming = scheduledDate > new Date() && data.status === 'scheduled';
+  const scheduledDate = new Date(getScheduledTime(data));
+  const status = data.status || 'scheduled';
+  const isUpcoming = scheduledDate > new Date() && status === 'scheduled';
   const isToday = format(scheduledDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
 
   const statusVariant: Record<string, 'scheduled' | 'in-progress' | 'completed' | 'cancelled'> = {
@@ -44,8 +56,8 @@ export function SessionCard({ session, schedule, showPatientName = false, onJoin
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 space-y-3">
             <div className="flex items-center gap-2">
-              <Badge variant={statusVariant[data.status]}>
-                {data.status.replace('-', ' ')}
+              <Badge variant={statusVariant[status]}>
+                {status.replace('-', ' ')}
               </Badge>
               {isToday && isUpcoming && (
                 <Badge variant="success">Today</Badge>
@@ -53,7 +65,7 @@ export function SessionCard({ session, schedule, showPatientName = false, onJoin
             </div>
 
             <div className="space-y-2">
-              {showPatientName && 'patientName' in data && (
+              {showPatientName && 'patientName' in data && data.patientName && (
                 <div className="flex items-center gap-2 text-sm text-foreground">
                   <User className="h-4 w-4 text-muted-foreground" />
                   <span className="font-medium">{data.patientName}</span>
@@ -68,7 +80,7 @@ export function SessionCard({ session, schedule, showPatientName = false, onJoin
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Clock className="h-4 w-4" />
                 <span>
-                  {format(scheduledDate, 'h:mm a')} • {data.duration} minutes
+                  {format(scheduledDate, 'h:mm a')} • {data.duration || 50} minutes
                 </span>
               </div>
             </div>

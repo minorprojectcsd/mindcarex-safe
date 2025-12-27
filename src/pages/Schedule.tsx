@@ -21,7 +21,7 @@ export default function Schedule() {
       if (!user) return;
 
       try {
-        const data = await scheduleApi.getSchedules(user.id);
+        const data = await scheduleApi.getDoctorSchedules(user.id);
         setSchedules(data);
       } catch (error) {
         console.error('Failed to load schedules:', error);
@@ -36,7 +36,7 @@ export default function Schedule() {
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(currentWeekStart, i));
 
   const getSchedulesForDay = (date: Date) =>
-    schedules.filter((s) => isSameDay(new Date(s.scheduledAt), date));
+    schedules.filter((s) => isSameDay(new Date(s.scheduled_time), date));
 
   const navigateWeek = (direction: 'prev' | 'next') => {
     setCurrentWeekStart((prev) =>
@@ -150,7 +150,7 @@ export default function Schedule() {
                       </div>
                       {weekDays.map((day) => {
                         const daySchedules = getSchedulesForDay(day).filter(
-                          (s) => format(new Date(s.scheduledAt), 'HH:00') === time
+                          (s) => format(new Date(s.scheduled_time), 'HH:00') === time
                         );
                         const isToday = isSameDay(day, new Date());
 
@@ -168,10 +168,10 @@ export default function Schedule() {
                                 className="mb-1 rounded-md bg-primary p-2 text-xs text-primary-foreground"
                               >
                                 <p className="font-medium truncate">
-                                  {schedule.patientName}
+                                  {schedule.patientName || 'Unknown'}
                                 </p>
                                 <p className="opacity-80">
-                                  {format(new Date(schedule.scheduledAt), 'h:mm a')}
+                                  {format(new Date(schedule.scheduled_time), 'h:mm a')}
                                 </p>
                               </div>
                             ))}
@@ -195,7 +195,7 @@ export default function Schedule() {
             <div className="space-y-3">
               {schedules
                 .filter((s) => s.status === 'scheduled')
-                .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime())
+                .sort((a, b) => new Date(a.scheduled_time).getTime() - new Date(b.scheduled_time).getTime())
                 .slice(0, 5)
                 .map((schedule) => (
                   <div
@@ -205,18 +205,18 @@ export default function Schedule() {
                     <div className="flex items-center gap-4">
                       <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-light">
                         <span className="text-sm font-semibold text-primary">
-                          {schedule.patientName.split(' ').map((n) => n[0]).join('')}
+                          {schedule.patientName?.split(' ').map((n) => n[0]).join('') || '?'}
                         </span>
                       </div>
                       <div>
-                        <p className="font-medium">{schedule.patientName}</p>
+                        <p className="font-medium">{schedule.patientName || 'Unknown'}</p>
                         <p className="text-sm text-muted-foreground">
-                          {format(new Date(schedule.scheduledAt), 'EEEE, MMMM d')} at{' '}
-                          {format(new Date(schedule.scheduledAt), 'h:mm a')}
+                          {format(new Date(schedule.scheduled_time), 'EEEE, MMMM d')} at{' '}
+                          {format(new Date(schedule.scheduled_time), 'h:mm a')}
                         </p>
                       </div>
                     </div>
-                    <Badge variant="scheduled">{schedule.duration} min</Badge>
+                    <Badge variant="scheduled">{schedule.duration || 50} min</Badge>
                   </div>
                 ))}
             </div>

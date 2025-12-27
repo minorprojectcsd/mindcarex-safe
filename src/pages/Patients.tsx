@@ -22,7 +22,7 @@ export default function Patients() {
       try {
         const [patientsData, schedulesData] = await Promise.all([
           patientApi.getPatients(user.id),
-          scheduleApi.getSchedules(user.id),
+          scheduleApi.getDoctorSchedules(user.id),
         ]);
 
         setPatients(patientsData);
@@ -40,15 +40,15 @@ export default function Patients() {
   const filteredPatients = patients.filter(
     (patient) =>
       patient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      patient.email.toLowerCase().includes(searchQuery.toLowerCase())
+      (patient.email && patient.email.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   const getNextSession = (patientId: string): Date | undefined => {
     const patientSchedules = schedules
-      .filter((s) => s.patientId === patientId && s.status === 'scheduled')
-      .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime());
+      .filter((s) => s.patient_id === patientId && s.status === 'scheduled')
+      .sort((a, b) => new Date(a.scheduled_time).getTime() - new Date(b.scheduled_time).getTime());
     
-    return patientSchedules[0] ? new Date(patientSchedules[0].scheduledAt) : undefined;
+    return patientSchedules[0] ? new Date(patientSchedules[0].scheduled_time) : undefined;
   };
 
   return (

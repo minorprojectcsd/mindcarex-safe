@@ -4,7 +4,6 @@ import { Users, Calendar, Clock, AlertTriangle, Video } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { StatsCard } from '@/components/dashboard/StatsCard';
-import { SessionCard } from '@/components/dashboard/SessionCard';
 import { PatientCard } from '@/components/patients/PatientCard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,7 +26,7 @@ export default function DoctorDashboard() {
       try {
         const [patientsData, schedulesData] = await Promise.all([
           patientApi.getPatients(user.id),
-          scheduleApi.getSchedules(user.id),
+          scheduleApi.getDoctorSchedules(user.id),
         ]);
 
         setPatients(patientsData);
@@ -55,7 +54,7 @@ export default function DoctorDashboard() {
   const todaySchedules = schedules.filter(
     (s) =>
       s.status === 'scheduled' &&
-      format(new Date(s.scheduledAt), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
+      format(new Date(s.scheduled_time), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
   );
 
   const upcomingSchedules = schedules.filter((s) => s.status === 'scheduled');
@@ -123,14 +122,14 @@ export default function DoctorDashboard() {
                     <div className="flex items-center gap-4">
                       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-light">
                         <span className="text-sm font-semibold text-primary">
-                          {schedule.patientName.split(' ').map((n) => n[0]).join('')}
+                          {schedule.patientName?.split(' ').map((n) => n[0]).join('') || '?'}
                         </span>
                       </div>
                       <div>
-                        <p className="font-medium">{schedule.patientName}</p>
+                        <p className="font-medium">{schedule.patientName || 'Unknown'}</p>
                         <p className="text-sm text-muted-foreground">
-                          {format(new Date(schedule.scheduledAt), 'h:mm a')} •{' '}
-                          {schedule.duration} min
+                          {format(new Date(schedule.scheduled_time), 'h:mm a')} •{' '}
+                          {schedule.duration || 50} min
                         </p>
                       </div>
                     </div>
@@ -173,7 +172,7 @@ export default function DoctorDashboard() {
                   key={patient.id}
                   patient={patient}
                   riskLevel="medium"
-                  nextSession={new Date(schedules[0]?.scheduledAt)}
+                  nextSession={schedules[0] ? new Date(schedules[0].scheduled_time) : undefined}
                 />
               ))}
             </CardContent>
