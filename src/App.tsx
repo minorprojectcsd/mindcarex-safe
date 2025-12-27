@@ -23,9 +23,18 @@ const queryClient = new QueryClient();
 
 // Dashboard router based on role
 function Dashboard() {
-  const { user } = useAuth();
+  const { user, isLoading, isAuthenticated } = useAuth();
   
-  if (!user) {
+  // Wait for auth to initialize
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="animate-pulse text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
+  
+  if (!isAuthenticated || !user) {
     return <Navigate to="/login" replace />;
   }
   
