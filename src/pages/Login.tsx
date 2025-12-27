@@ -30,10 +30,6 @@ export default function Login() {
     }
   };
 
-  const fillDemoCredentials = (role: 'patient' | 'doctor') => {
-    setEmail(role === 'patient' ? 'patient@demo.com' : 'doctor@demo.com');
-    setPassword('demo123');
-  };
 
   return (
     <div className="gradient-hero flex min-h-screen items-center justify-center p-4">
@@ -98,28 +94,6 @@ export default function Login() {
               </Button>
             </form>
 
-            {/* Demo accounts */}
-            <div className="mt-6 border-t pt-6">
-              <p className="mb-3 text-center text-sm text-muted-foreground">
-                Try demo accounts
-              </p>
-              <div className="grid grid-cols-2 gap-3">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => fillDemoCredentials('patient')}
-                >
-                  Patient Demo
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => fillDemoCredentials('doctor')}
-                >
-                  Doctor Demo
-                </Button>
-              </div>
-            </div>
 
             <p className="mt-6 text-center text-sm text-muted-foreground">
               Don't have an account?{' '}

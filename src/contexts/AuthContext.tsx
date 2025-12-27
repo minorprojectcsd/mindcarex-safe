@@ -1,97 +1,182 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import { User, UserRole } from '@/types';
+import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
+import { User, Session } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
+import { UserRole } from '@/types';
+
+interface AuthUser {
+  id: string;
+  email: string;
+  name: string;
+  role: UserRole;
+  created_at: string;
+}
 
 interface AuthContextType {
-  user: User | null;
+  user: AuthUser | null;
+  session: Session | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, name: string, role: UserRole) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock users for development
-const mockUsers: User[] = [
-  {
-    id: 'patient-1',
-    email: 'patient@demo.com',
-    name: 'Sarah Johnson',
-    role: 'PATIENT',
-    created_at: '2024-01-15T10:00:00Z',
-  },
-  {
-    id: 'doctor-1',
-    email: 'doctor@demo.com',
-    name: 'Dr. Michael Chen',
-    role: 'DOCTOR',
-    created_at: '2023-06-01T10:00:00Z',
-  },
-];
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch user profile and role
+  const fetchUserData = async (userId: string, email: string): Promise<AuthUser | null> => {
+    try {
+      // Fetch profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('name, created_at')
+        .eq('id', userId)
+        .single();
+
+      // Fetch role
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .single();
+
+      if (profile && roleData) {
+        return {
+          id: userId,
+          email: email,
+          name: profile.name,
+          role: roleData.role as UserRole,
+          created_at: profile.created_at || new Date().toISOString(),
+        };
+      }
+      return null;
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+      return null;
+    }
+  };
+
+  // Initialize auth state
+  useEffect(() => {
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, currentSession) => {
+        setSession(currentSession);
+        
+        if (currentSession?.user) {
+          // Defer Supabase calls with setTimeout to prevent deadlock
+          setTimeout(async () => {
+            const userData = await fetchUserData(
+              currentSession.user.id,
+              currentSession.user.email || ''
+            );
+            setUser(userData);
+            setIsLoading(false);
+          }, 0);
+        } else {
+          setUser(null);
+          setIsLoading(false);
+        }
+      }
+    );
+
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session: existingSession } }) => {
+      setSession(existingSession);
+      
+      if (existingSession?.user) {
+        fetchUserData(existingSession.user.id, existingSession.user.email || '')
+          .then(userData => {
+            setUser(userData);
+            setIsLoading(false);
+          });
+      } else {
+        setIsLoading(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const login = useCallback(async (email: string, password: string) => {
     setIsLoading(true);
     
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 800));
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
     
-    const foundUser = mockUsers.find(u => u.email === email);
-    
-    if (foundUser && password === 'demo123') {
-      setUser(foundUser);
-      localStorage.setItem('auth_user', JSON.stringify(foundUser));
-    } else {
-      throw new Error('Invalid credentials. Use demo accounts: patient@demo.com or doctor@demo.com with password: demo123');
+    if (error) {
+      setIsLoading(false);
+      throw new Error(error.message);
     }
-    
-    setIsLoading(false);
   }, []);
 
   const register = useCallback(async (email: string, password: string, name: string, role: UserRole) => {
     setIsLoading(true);
     
-    await new Promise(resolve => setTimeout(resolve, 800));
+    const redirectUrl = `${window.location.origin}/`;
     
-    const newUser: User = {
-      id: `${role.toLowerCase()}-${Date.now()}`,
+    const { data, error } = await supabase.auth.signUp({
       email,
-      name,
-      role,
-      created_at: new Date().toISOString(),
-    };
+      password,
+      options: {
+        emailRedirectTo: redirectUrl,
+      },
+    });
     
-    setUser(newUser);
-    localStorage.setItem('auth_user', JSON.stringify(newUser));
-    setIsLoading(false);
-  }, []);
+    if (error) {
+      setIsLoading(false);
+      throw new Error(error.message);
+    }
 
-  const logout = useCallback(() => {
-    setUser(null);
-    localStorage.removeItem('auth_user');
-  }, []);
+    if (data.user) {
+      // Create profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          id: data.user.id,
+          name,
+          email,
+        });
 
-  // Check for existing session on mount
-  React.useEffect(() => {
-    const stored = localStorage.getItem('auth_user');
-    if (stored) {
-      try {
-        setUser(JSON.parse(stored));
-      } catch {
-        localStorage.removeItem('auth_user');
+      if (profileError) {
+        console.error('Error creating profile:', profileError);
+        throw new Error('Failed to create user profile');
+      }
+
+      // Assign role
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .insert({
+          user_id: data.user.id,
+          role,
+        });
+
+      if (roleError) {
+        console.error('Error assigning role:', roleError);
+        throw new Error('Failed to assign user role');
       }
     }
+  }, []);
+
+  const logout = useCallback(async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    setSession(null);
   }, []);
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        isAuthenticated: !!user,
+        session,
+        isAuthenticated: !!session && !!user,
         isLoading,
         login,
         register,
