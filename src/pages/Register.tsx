@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Heart, Mail, Lock, User, ArrowRight } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -10,13 +10,20 @@ import { UserRole } from '@/types';
 
 export default function Register() {
   const navigate = useNavigate();
-  const { register, isLoading } = useAuth();
+  const { register, isLoading, isAuthenticated } = useAuth();
   const { toast } = useToast();
   
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<UserRole>('PATIENT');
+
+  // Redirect to dashboard when authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,7 +34,7 @@ export default function Register() {
         title: 'Account created',
         description: 'Welcome to MindCare!',
       });
-      navigate('/dashboard');
+      // Navigation will happen via useEffect when isAuthenticated changes
     } catch (error) {
       toast({
         title: 'Registration failed',
