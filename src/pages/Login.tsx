@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Heart, Mail, Lock, ArrowRight } from 'lucide-react';
+import { Mail, Lock, ArrowRight } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import mindcareLogo from '@/assets/mindcare-logo.png';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -36,9 +37,7 @@ export default function Login() {
       <div className="w-full max-w-md animate-slide-up">
         {/* Logo */}
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-primary shadow-glow">
-            <Heart className="h-7 w-7 text-primary-foreground" />
-          </div>
+          <img src={mindcareLogo} alt="MindCare Logo" className="mx-auto mb-4 h-14 w-14 rounded-xl object-contain shadow-glow" />
           <h1 className="text-2xl font-bold">MindCare</h1>
           <p className="mt-1 text-muted-foreground">Mental Health Platform</p>
         </div>

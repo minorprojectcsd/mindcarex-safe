@@ -10,9 +10,12 @@ import {
   Settings,
   LogOut,
   Shield,
+  Sun,
+  Moon,
 } from 'lucide-react';
-import mindcareLogo from '@/assets/mindcare-logo.png';
 import { Button } from '@/components/ui/button';
+import { useTheme } from 'next-themes';
+import mindcareLogo from '@/assets/mindcare-logo.png';
 
 const patientNavItems = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
@@ -33,6 +36,7 @@ const doctorNavItems = [
 export function Sidebar() {
   const { user, logout } = useAuth();
   const location = useLocation();
+  const { theme, setTheme } = useTheme();
 
   if (!user) return null;
 
@@ -92,6 +96,14 @@ export function Sidebar() {
               </div>
             </div>
           </div>
+          <Button
+            variant="ghost"
+            className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground"
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          >
+            {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+          </Button>
           <Button
             variant="ghost"
             className="w-full justify-start gap-2 text-muted-foreground hover:text-destructive"
