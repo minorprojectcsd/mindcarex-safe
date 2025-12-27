@@ -136,18 +136,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     if (data.user) {
-      // Create profile
+      // Profile is created automatically by handle_new_user trigger
+      // We need to update the name since the trigger uses email as fallback
       const { error: profileError } = await supabase
         .from('profiles')
-        .insert({
-          id: data.user.id,
-          name,
-          email,
-        });
+        .update({ name })
+        .eq('id', data.user.id);
 
       if (profileError) {
-        console.error('Error creating profile:', profileError);
-        throw new Error('Failed to create user profile');
+        console.error('Error updating profile:', profileError);
       }
 
       // Assign role
