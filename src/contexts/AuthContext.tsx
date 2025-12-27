@@ -101,13 +101,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (email: string, password: string) => {
     setIsLoading(true);
-    try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
-    } finally {
-      setIsLoading(false);
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    setIsLoading(false);
+    if (error) throw error;
+    
+    // Wait for auth state to update and fetch user data
+    if (data.user) {
+      const userData = await fetchUserData(data.user);
+      setUser(userData);
     }
-  }, []);
+  }, [fetchUserData]);
 
   const register = useCallback(async (email: string, password: string, name: string, role: UserRole) => {
     setIsLoading(true);
