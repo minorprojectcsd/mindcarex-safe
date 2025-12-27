@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import { Heart, ChevronDown } from 'lucide-react';
 import Login from './Login';
-import AnimatedCube from '@/components/background/AnimatedCube';
+import JumpingDots from '@/components/background/JumpingDots';
 
 export default function Landing() {
   const loginRef = useRef<HTMLDivElement>(null);
@@ -14,8 +14,6 @@ export default function Landing() {
     <div className="scroll-smooth">
       {/* Welcome Section - Full Screen */}
       <section className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-background">
-        {/* Animated Cube Background */}
-        <AnimatedCube />
         {/* Logo */}
         <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-primary shadow-glow">
           <Heart className="h-10 w-10 text-primary-foreground" />
@@ -31,7 +29,10 @@ export default function Landing() {
           Your Mental Wellness, Our Priority
         </p>
 
-        {/* Blinking Scroll Indicator */}
+        {/* Jumping Dots Animation */}
+        <div className="mt-8">
+          <JumpingDots />
+        </div>
         <button
           onClick={scrollToLogin}
           className="absolute bottom-12 flex flex-col items-center gap-2 text-muted-foreground transition-colors hover:text-primary"
