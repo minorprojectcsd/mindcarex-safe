@@ -41,30 +41,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AppUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchUserData = useCallback(async (supabaseUser: SupabaseUser): Promise<AppUser | null> => {
-    // Fetch profile
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', supabaseUser.id)
-      .maybeSingle();
+  const fetchUserData = useCallback(async (supabaseUser: SupabaseUser, retryCount = 0): Promise<AppUser | null> => {
+    // Fetch profile and role in parallel
+    const [profileResult, roleResult] = await Promise.all([
+      supabase.from('profiles').select('*').eq('id', supabaseUser.id).maybeSingle(),
+      supabase.from('user_roles').select('role').eq('user_id', supabaseUser.id).maybeSingle()
+    ]);
 
-    // Fetch role
-    const { data: roleData } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', supabaseUser.id)
-      .maybeSingle();
+    const profile = profileResult.data as Profile | null;
+    const roleData = roleResult.data;
+
+    // If no role found and we haven't retried too many times, wait and retry
+    // This handles the race condition where role insert hasn't completed yet
+    if (!roleData?.role && retryCount < 3) {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      return fetchUserData(supabaseUser, retryCount + 1);
+    }
 
     return {
       id: supabaseUser.id,
       email: supabaseUser.email || '',
-      name: (profile as Profile)?.name || supabaseUser.email || '',
+      name: profile?.name || supabaseUser.email || '',
       role: roleData?.role as UserRole || null,
-      avatar_url: (profile as Profile)?.avatar_url,
-      specialization: (profile as Profile)?.specialization,
-      license_number: (profile as Profile)?.license_number,
-      primary_doctor_id: (profile as Profile)?.primary_doctor_id,
+      avatar_url: profile?.avatar_url,
+      specialization: profile?.specialization,
+      license_number: profile?.license_number,
+      primary_doctor_id: profile?.primary_doctor_id,
     };
   }, []);
 
