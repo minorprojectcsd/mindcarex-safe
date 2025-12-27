@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { Users, Calendar, Clock, AlertTriangle, Video } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -7,27 +8,44 @@ import { PatientCard } from '@/components/patients/PatientCard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { useDoctorDashboard } from '@/hooks/useDashboardData';
+import { useAuth } from '@/contexts/AuthContext';
+import { patientApi, scheduleApi } from '@/services/api';
+import { Patient, Schedule } from '@/types';
 
 export default function DoctorDashboard() {
+  const { user } = useAuth();
   const navigate = useNavigate();
-  const { patients, schedules, isLoading, error } = useDoctorDashboard();
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [schedules, setSchedules] = useState<Schedule[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadData = async () => {
+      if (!user) return;
+
+      try {
+        const [patientsData, schedulesData] = await Promise.all([
+          patientApi.getPatients(user.id),
+          scheduleApi.getDoctorSchedules(user.id),
+        ]);
+
+        setPatients(patientsData);
+        setSchedules(schedulesData);
+      } catch (error) {
+        console.error('Failed to load dashboard data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
+  }, [user]);
 
   if (isLoading) {
     return (
       <DashboardLayout requireRole="DOCTOR">
         <div className="flex h-64 items-center justify-center">
           <p className="text-muted-foreground">Loading dashboard...</p>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
-  if (error) {
-    return (
-      <DashboardLayout requireRole="DOCTOR">
-        <div className="flex h-64 items-center justify-center">
-          <p className="text-destructive">Error: {error}</p>
         </div>
       </DashboardLayout>
     );
@@ -41,8 +59,8 @@ export default function DoctorDashboard() {
 
   const upcomingSchedules = schedules.filter((s) => s.status === 'scheduled');
 
-  // For now, we don't have real risk data - could be enhanced later
-  const highRiskPatients = patients.slice(0, 1);
+  // Simulate risk indicators
+  const highRiskPatients = patients.filter((_, i) => i === 0);
 
   return (
     <DashboardLayout requireRole="DOCTOR">
@@ -74,7 +92,7 @@ export default function DoctorDashboard() {
             icon={<Calendar className="h-6 w-6" />}
           />
           <StatsCard
-            title="Upcoming"
+            title="This Week"
             value={upcomingSchedules.length}
             icon={<Clock className="h-6 w-6" />}
           />
@@ -96,40 +114,37 @@ export default function DoctorDashboard() {
           <CardContent>
             {todaySchedules.length > 0 ? (
               <div className="space-y-4">
-                {todaySchedules.map((schedule) => {
-                  const patientName = schedule.patient_profile?.name || 'Unknown Patient';
-                  return (
-                    <div
-                      key={schedule.id}
-                      className="flex items-center justify-between rounded-lg border p-4"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-                          <span className="text-sm font-semibold text-primary">
-                            {patientName.split(' ').map((n) => n[0]).join('')}
-                          </span>
-                        </div>
-                        <div>
-                          <p className="font-medium">{patientName}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {format(new Date(schedule.scheduled_time), 'h:mm a')} •{' '}
-                            {schedule.duration || 50} min
-                          </p>
-                        </div>
+                {todaySchedules.map((schedule) => (
+                  <div
+                    key={schedule.id}
+                    className="flex items-center justify-between rounded-lg border p-4"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-light">
+                        <span className="text-sm font-semibold text-primary">
+                          {schedule.patientName?.split(' ').map((n) => n[0]).join('') || '?'}
+                        </span>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <Badge variant="scheduled">Scheduled</Badge>
-                        <Button
-                          size="sm"
-                          onClick={() => navigate(`/video/${schedule.id}`)}
-                        >
-                          <Video className="mr-2 h-4 w-4" />
-                          Start
-                        </Button>
+                      <div>
+                        <p className="font-medium">{schedule.patientName || 'Unknown'}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {format(new Date(schedule.scheduled_time), 'h:mm a')} •{' '}
+                          {schedule.duration || 50} min
+                        </p>
                       </div>
                     </div>
-                  );
-                })}
+                    <div className="flex items-center gap-3">
+                      <Badge variant="scheduled">Scheduled</Badge>
+                      <Button
+                        size="sm"
+                        onClick={() => navigate(`/video/${schedule.id}`)}
+                      >
+                        <Video className="mr-2 h-4 w-4" />
+                        Start
+                      </Button>
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : (
               <div className="py-8 text-center">
@@ -143,7 +158,7 @@ export default function DoctorDashboard() {
         </Card>
 
         {/* Patients requiring attention */}
-        {highRiskPatients.length > 0 && patients.length > 0 && (
+        {highRiskPatients.length > 0 && (
           <Card className="border-warning">
             <CardHeader>
               <div className="flex items-center gap-2">
@@ -155,13 +170,7 @@ export default function DoctorDashboard() {
               {highRiskPatients.map((patient) => (
                 <PatientCard
                   key={patient.id}
-                  patient={{
-                    id: patient.id,
-                    name: patient.name,
-                    email: patient.email || undefined,
-                    avatar: patient.avatar_url || undefined,
-                    dateOfBirth: patient.date_of_birth || undefined,
-                  }}
+                  patient={patient}
                   riskLevel="medium"
                   nextSession={schedules[0] ? new Date(schedules[0].scheduled_time) : undefined}
                 />
@@ -178,33 +187,16 @@ export default function DoctorDashboard() {
               View All Patients
             </Button>
           </div>
-          {patients.length > 0 ? (
-            <div className="grid gap-4 md:grid-cols-2">
-              {patients.slice(0, 4).map((patient, index) => (
-                <PatientCard
-                  key={patient.id}
-                  patient={{
-                    id: patient.id,
-                    name: patient.name,
-                    email: patient.email || undefined,
-                    avatar: patient.avatar_url || undefined,
-                    dateOfBirth: patient.date_of_birth || undefined,
-                  }}
-                  riskLevel={index === 0 ? 'medium' : 'low'}
-                  lastImprovement={index === 2 ? 12 : undefined}
-                />
-              ))}
-            </div>
-          ) : (
-            <Card>
-              <CardContent className="py-8 text-center">
-                <Users className="mx-auto h-12 w-12 text-muted-foreground" />
-                <p className="mt-4 text-muted-foreground">
-                  No patients yet. Schedule an appointment to get started.
-                </p>
-              </CardContent>
-            </Card>
-          )}
+          <div className="grid gap-4 md:grid-cols-2">
+            {patients.slice(0, 4).map((patient, index) => (
+              <PatientCard
+                key={patient.id}
+                patient={patient}
+                riskLevel={index === 0 ? 'medium' : 'low'}
+                lastImprovement={index === 2 ? 12 : undefined}
+              />
+            ))}
+          </div>
         </div>
       </div>
     </DashboardLayout>
