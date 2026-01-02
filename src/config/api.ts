@@ -1,5 +1,5 @@
 // API Configuration
-// Set these environment variables or update the defaults for production
+// Set these environment variables for production deployment
 
 export const API_CONFIG = {
   // Spring Boot Backend (handles auth, sessions, schedules, messages, WebSocket)
@@ -12,10 +12,11 @@ export const API_CONFIG = {
   WEBSOCKET_URL: import.meta.env.VITE_WEBSOCKET_URL || 'ws://localhost:8080/ws',
   
   // Toggle between mock data and real backends
-  USE_MOCK: import.meta.env.VITE_USE_MOCK === 'true' || true, // Set to false when backends are ready
+  // In production: set VITE_USE_MOCK=false in environment
+  USE_MOCK: import.meta.env.VITE_USE_MOCK === 'true',
   
-  // Use Supabase directly (bypasses Spring Boot for data operations)
-  USE_SUPABASE_DIRECT: import.meta.env.VITE_USE_SUPABASE_DIRECT === 'true' || true,
+  // Use Supabase directly for data operations (recommended for production)
+  USE_SUPABASE_DIRECT: import.meta.env.VITE_USE_SUPABASE_DIRECT !== 'false',
 };
 
 // Helper to get auth token for API calls
