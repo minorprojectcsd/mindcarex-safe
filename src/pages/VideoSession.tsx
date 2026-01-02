@@ -170,7 +170,7 @@ export default function VideoSession() {
 
   return (
     <DashboardLayout>
-      <div className="h-[calc(100vh-8rem)]">
+      <div className="h-[calc(100vh-5rem)] md:h-[calc(100vh-8rem)]">
         <VideoRoom
           sessionId={sessionId || 'demo-session'}
           consent={consent!}

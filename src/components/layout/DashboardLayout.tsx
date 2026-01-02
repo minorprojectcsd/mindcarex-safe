@@ -22,8 +22,9 @@ export function DashboardLayout({ children, requireRole }: DashboardLayoutProps)
   return (
     <div className="min-h-screen bg-background">
       <Sidebar />
-      <main className="pl-64">
-        <div className="min-h-screen p-8">
+      {/* Main content: adds top padding on mobile for header, left padding on desktop for sidebar */}
+      <main className="pt-14 md:pt-0 md:pl-64">
+        <div className="min-h-screen p-4 md:p-8">
           {children}
         </div>
       </main>

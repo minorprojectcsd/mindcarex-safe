@@ -61,11 +61,11 @@ export default function PatientDashboard() {
 
   return (
     <DashboardLayout requireRole="PATIENT">
-      <div className="space-y-8">
+      <div className="space-y-6 md:space-y-8">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold">Welcome back, {user?.name.split(' ')[0]}</h1>
-          <p className="mt-1 text-muted-foreground">
+          <h1 className="text-2xl font-bold md:text-3xl">Welcome back, {user?.name.split(' ')[0]}</h1>
+          <p className="mt-1 text-sm text-muted-foreground md:text-base">
             Here's an overview of your mental health journey
           </p>
         </div>
@@ -138,7 +138,7 @@ export default function PatientDashboard() {
 
         {/* Past sessions */}
         <div className="space-y-4">
-          <h2 className="text-xl font-semibold">Past Sessions</h2>
+          <h2 className="text-lg font-semibold md:text-xl">Past Sessions</h2>
           {sessions.filter((s) => s.status === 'completed').length > 0 ? (
             <div className="grid gap-4 md:grid-cols-2">
               {sessions

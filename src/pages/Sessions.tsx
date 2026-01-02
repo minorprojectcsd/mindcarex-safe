@@ -42,21 +42,21 @@ export default function Sessions() {
 
   return (
     <DashboardLayout requireRole="PATIENT">
-      <div className="space-y-6">
+      <div className="space-y-4 md:space-y-6">
         {/* Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold">My Sessions</h1>
-            <p className="mt-1 text-muted-foreground">
+            <h1 className="text-2xl font-bold md:text-3xl">My Sessions</h1>
+            <p className="mt-1 text-sm text-muted-foreground md:text-base">
               View and manage your consultation sessions
             </p>
           </div>
-          <div className="flex gap-3">
-            <Button variant="outline">
+          <div className="flex gap-2 sm:gap-3">
+            <Button variant="outline" size="sm" className="flex-1 sm:flex-none sm:size-auto">
               <Filter className="mr-2 h-4 w-4" />
               Filter
             </Button>
-            <Button variant="outline">
+            <Button variant="outline" size="sm" className="flex-1 sm:flex-none sm:size-auto">
               <Download className="mr-2 h-4 w-4" />
               Export
             </Button>
@@ -64,15 +64,15 @@ export default function Sessions() {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="upcoming" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="upcoming">
+        <Tabs defaultValue="upcoming" className="space-y-4 md:space-y-6">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="upcoming" className="text-xs sm:text-sm">
               Upcoming ({upcomingSchedules.length})
             </TabsTrigger>
-            <TabsTrigger value="completed">
+            <TabsTrigger value="completed" className="text-xs sm:text-sm">
               Completed ({completedSessions.length})
             </TabsTrigger>
-            <TabsTrigger value="cancelled">
+            <TabsTrigger value="cancelled" className="text-xs sm:text-sm">
               Cancelled ({cancelledSessions.length})
             </TabsTrigger>
           </TabsList>

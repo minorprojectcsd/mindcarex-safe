@@ -53,23 +53,23 @@ export default function Patients() {
 
   return (
     <DashboardLayout requireRole="DOCTOR">
-      <div className="space-y-6">
+      <div className="space-y-4 md:space-y-6">
         {/* Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Patients</h1>
-            <p className="mt-1 text-muted-foreground">
+            <h1 className="text-2xl font-bold md:text-3xl">Patients</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
               {patients.length} patients under your care
             </p>
           </div>
-          <Button>
+          <Button className="w-full sm:w-auto">
             <Plus className="mr-2 h-4 w-4" />
             Add Patient
           </Button>
         </div>
 
         {/* Search & Filter */}
-        <div className="flex gap-3">
+        <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -79,7 +79,7 @@ export default function Patients() {
               className="pl-10"
             />
           </div>
-          <Button variant="outline">
+          <Button variant="outline" className="w-full sm:w-auto">
             <Filter className="mr-2 h-4 w-4" />
             Filter
           </Button>

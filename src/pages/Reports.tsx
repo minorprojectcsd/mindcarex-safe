@@ -55,16 +55,16 @@ export default function Reports() {
 
   return (
     <DashboardLayout requireRole="DOCTOR">
-      <div className="space-y-6">
+      <div className="space-y-4 md:space-y-6">
         {/* Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Reports</h1>
-            <p className="mt-1 text-muted-foreground">
+            <h1 className="text-2xl font-bold md:text-3xl">Reports</h1>
+            <p className="mt-1 text-sm text-muted-foreground md:text-base">
               Session analytics and patient insights
             </p>
           </div>
-          <Button>
+          <Button className="w-full sm:w-auto">
             <Download className="mr-2 h-4 w-4" />
             Export All Reports
           </Button>
@@ -137,29 +137,29 @@ export default function Reports() {
                 <p className="text-muted-foreground">Loading reports...</p>
               </div>
             ) : completedSessions.length > 0 ? (
-              <div className="space-y-4">
+              <div className="space-y-3 md:space-y-4">
                 {completedSessions.map((session) => (
                   <div
                     key={session.id}
-                    className="flex items-center justify-between rounded-lg border p-4"
+                    className="flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4"
                   >
-                    <div className="flex items-center gap-4">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-light">
-                        <FileText className="h-5 w-5 text-primary" />
+                    <div className="flex items-center gap-3 sm:gap-4">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-light sm:h-10 sm:w-10">
+                        <FileText className="h-4 w-4 text-primary sm:h-5 sm:w-5" />
                       </div>
-                      <div>
-                        <p className="font-medium">
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-medium text-sm sm:text-base">
                           {getPatientName(session.patient_id)}
                         </p>
-                        <p className="text-sm text-muted-foreground">
-                          {format(new Date(session.start_time || new Date()), 'MMMM d, yyyy')} •{' '}
+                        <p className="text-xs text-muted-foreground sm:text-sm">
+                          {format(new Date(session.start_time || new Date()), 'MMM d, yyyy')} •{' '}
                           {session.duration || 50} min
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <Badge variant="completed">Completed</Badge>
-                      <Button variant="outline" size="sm">
+                    <div className="flex items-center justify-between gap-2 sm:gap-3">
+                      <Badge variant="completed" className="text-xs">Completed</Badge>
+                      <Button variant="outline" size="sm" className="flex-1 sm:flex-none">
                         View Report
                       </Button>
                     </div>

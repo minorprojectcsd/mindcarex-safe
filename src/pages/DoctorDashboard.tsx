@@ -64,16 +64,16 @@ export default function DoctorDashboard() {
 
   return (
     <DashboardLayout requireRole="DOCTOR">
-      <div className="space-y-8">
+      <div className="space-y-6 md:space-y-8">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Dashboard</h1>
-            <p className="mt-1 text-muted-foreground">
+            <h1 className="text-2xl font-bold md:text-3xl">Dashboard</h1>
+            <p className="mt-1 text-sm text-muted-foreground md:text-base">
               {format(new Date(), 'EEEE, MMMM d, yyyy')}
             </p>
           </div>
-          <Button onClick={() => navigate('/schedule')}>
+          <Button onClick={() => navigate('/schedule')} className="w-full sm:w-auto">
             <Calendar className="mr-2 h-4 w-4" />
             New Appointment
           </Button>
@@ -113,31 +113,32 @@ export default function DoctorDashboard() {
           </CardHeader>
           <CardContent>
             {todaySchedules.length > 0 ? (
-              <div className="space-y-4">
+              <div className="space-y-3 md:space-y-4">
                 {todaySchedules.map((schedule) => (
                   <div
                     key={schedule.id}
-                    className="flex items-center justify-between rounded-lg border p-4"
+                    className="flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4"
                   >
-                    <div className="flex items-center gap-4">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-light">
-                        <span className="text-sm font-semibold text-primary">
+                    <div className="flex items-center gap-3 sm:gap-4">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-light sm:h-12 sm:w-12">
+                        <span className="text-xs font-semibold text-primary sm:text-sm">
                           {schedule.patientName?.split(' ').map((n) => n[0]).join('') || '?'}
                         </span>
                       </div>
-                      <div>
-                        <p className="font-medium">{schedule.patientName || 'Unknown'}</p>
-                        <p className="text-sm text-muted-foreground">
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-medium">{schedule.patientName || 'Unknown'}</p>
+                        <p className="text-xs text-muted-foreground sm:text-sm">
                           {format(new Date(schedule.scheduled_time), 'h:mm a')} •{' '}
                           {schedule.duration || 50} min
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <Badge variant="scheduled">Scheduled</Badge>
+                    <div className="flex items-center justify-between gap-2 sm:gap-3">
+                      <Badge variant="scheduled" className="text-xs">Scheduled</Badge>
                       <Button
                         size="sm"
                         onClick={() => navigate(`/video/${schedule.id}`)}
+                        className="flex-1 sm:flex-none"
                       >
                         <Video className="mr-2 h-4 w-4" />
                         Start
@@ -181,9 +182,9 @@ export default function DoctorDashboard() {
 
         {/* Recent Patients */}
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">Recent Patients</h2>
-            <Button variant="outline" onClick={() => navigate('/patients')}>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <h2 className="text-lg font-semibold md:text-xl">Recent Patients</h2>
+            <Button variant="outline" onClick={() => navigate('/patients')} className="w-full sm:w-auto">
               View All Patients
             </Button>
           </div>
