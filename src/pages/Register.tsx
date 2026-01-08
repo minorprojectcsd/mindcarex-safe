@@ -26,7 +26,7 @@ export default function Register() {
       await register(email, password, name, role);
       toast({
         title: 'Account created',
-        description: 'Welcome to MindCare!',
+        description: 'Welcome to mindcarex!',
       });
       navigate('/dashboard');
     } catch (error) {
@@ -43,8 +43,8 @@ export default function Register() {
       <div className="w-full max-w-md animate-slide-up">
         {/* Logo */}
         <div className="mb-8 text-center">
-          <img src={mindcareLogo} alt="MindCare Logo" className="mx-auto mb-4 h-14 w-14 rounded-xl object-contain shadow-glow" />
-          <h1 className="text-2xl font-bold">MindCare</h1>
+          <img src={mindcareLogo} alt="mindcarex Logo" className="mx-auto mb-4 h-14 w-14 rounded-xl object-contain shadow-glow" />
+          <h1 className="text-2xl font-bold">mindcarex</h1>
           <p className="mt-1 text-muted-foreground">Mental Health Platform</p>
         </div>
 
@@ -52,7 +52,7 @@ export default function Register() {
           <CardHeader className="text-center">
             <CardTitle>Create an account</CardTitle>
             <CardDescription>
-              Join MindCare to access mental health support
+              Join mindcarex to access mental health support
             </CardDescription>
           </CardHeader>
           <CardContent>
