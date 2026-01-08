@@ -18,11 +18,11 @@ export default function Landing() {
         {/* Animated Cube Background */}
         <AnimatedCube />
         {/* Logo */}
-        <img src={mindcareLogo} alt="MindCare Logo" className="mx-auto mb-6 h-32 w-auto" />
+        <img src={mindcareLogo} alt="mindcarex Logo" className="mx-auto mb-6 h-32 w-auto" />
         
         {/* Company Name */}
         <h1 className="text-5xl font-bold tracking-tight md:text-7xl">
-          MindCare
+          mindcarex
         </h1>
         
         {/* Tagline */}
