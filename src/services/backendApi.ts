@@ -1,5 +1,5 @@
 // Spring Boot & Flask API calls (used when backends are deployed)
-import { API_CONFIG, getSpringHeaders, getFlaskHeaders } from '@/config/api';
+import { API_CONFIG, getSpringHeaders, getFlaskHeaders, handleApiResponse } from '@/config/api';
 import type {
   Session,
   Schedule,
@@ -20,29 +20,34 @@ export const springAuthApi = {
   async login(email: string, password: string): Promise<{ user: User; token: string }> {
     const res = await fetch(`${SPRING_BOOT_URL}/auth/login`, {
       method: 'POST',
-      headers: getSpringHeaders(),
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
     });
-    if (!res.ok) throw new Error('Login failed');
-    return res.json();
+    return handleApiResponse(res);
   },
 
   async register(data: { email: string; password: string; name: string; role: string }): Promise<{ user: User; token: string }> {
     const res = await fetch(`${SPRING_BOOT_URL}/auth/register`, {
       method: 'POST',
-      headers: getSpringHeaders(),
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    if (!res.ok) throw new Error('Registration failed');
-    return res.json();
+    return handleApiResponse(res);
   },
 
   async getMe(): Promise<User> {
     const res = await fetch(`${SPRING_BOOT_URL}/auth/me`, {
       headers: getSpringHeaders(),
     });
-    if (!res.ok) throw new Error('Not authenticated');
-    return res.json();
+    return handleApiResponse(res);
+  },
+
+  async refreshToken(): Promise<{ token: string }> {
+    const res = await fetch(`${SPRING_BOOT_URL}/auth/refresh`, {
+      method: 'POST',
+      headers: getSpringHeaders(),
+    });
+    return handleApiResponse(res);
   },
 };
 
@@ -53,24 +58,21 @@ export const springScheduleApi = {
       headers: getSpringHeaders(),
       body: JSON.stringify(schedule),
     });
-    if (!res.ok) throw new Error('Failed to create schedule');
-    return res.json();
+    return handleApiResponse(res);
   },
 
   async getDoctorSchedules(doctorId: string): Promise<Schedule[]> {
     const res = await fetch(`${SPRING_BOOT_URL}/schedules/doctor/${doctorId}`, {
       headers: getSpringHeaders(),
     });
-    if (!res.ok) throw new Error('Failed to fetch schedules');
-    return res.json();
+    return handleApiResponse(res);
   },
 
   async getPatientSchedules(patientId: string): Promise<Schedule[]> {
     const res = await fetch(`${SPRING_BOOT_URL}/schedules/patient/${patientId}`, {
       headers: getSpringHeaders(),
     });
-    if (!res.ok) throw new Error('Failed to fetch schedules');
-    return res.json();
+    return handleApiResponse(res);
   },
 
   async updateSchedule(scheduleId: string, updates: Partial<Schedule>): Promise<void> {
@@ -79,7 +81,10 @@ export const springScheduleApi = {
       headers: getSpringHeaders(),
       body: JSON.stringify(updates),
     });
-    if (!res.ok) throw new Error('Failed to update schedule');
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({ message: 'Failed to update schedule' }));
+      throw new Error(error.message);
+    }
   },
 
   async cancelSchedule(scheduleId: string): Promise<void> {
@@ -94,8 +99,7 @@ export const springSessionApi = {
       headers: getSpringHeaders(),
       body: JSON.stringify({ doctorId, patientId }),
     });
-    if (!res.ok) throw new Error('Failed to start session');
-    return res.json();
+    return handleApiResponse(res);
   },
 
   async endSession(sessionId: string): Promise<Session> {
@@ -103,8 +107,7 @@ export const springSessionApi = {
       method: 'POST',
       headers: getSpringHeaders(),
     });
-    if (!res.ok) throw new Error('Failed to end session');
-    return res.json();
+    return handleApiResponse(res);
   },
 
   async getSession(sessionId: string): Promise<Session | null> {
@@ -119,16 +122,14 @@ export const springSessionApi = {
     const res = await fetch(`${SPRING_BOOT_URL}/sessions/history/${userId}`, {
       headers: getSpringHeaders(),
     });
-    if (!res.ok) throw new Error('Failed to fetch session history');
-    return res.json();
+    return handleApiResponse(res);
   },
 
   async getMessages(sessionId: string) {
     const res = await fetch(`${SPRING_BOOT_URL}/sessions/${sessionId}/messages`, {
       headers: getSpringHeaders(),
     });
-    if (!res.ok) throw new Error('Failed to fetch messages');
-    return res.json();
+    return handleApiResponse(res);
   },
 
   async sendMessage(sessionId: string, content: string) {
@@ -137,8 +138,7 @@ export const springSessionApi = {
       headers: getSpringHeaders(),
       body: JSON.stringify({ content }),
     });
-    if (!res.ok) throw new Error('Failed to send message');
-    return res.json();
+    return handleApiResponse(res);
   },
 };
 
@@ -147,8 +147,7 @@ export const springPatientApi = {
     const res = await fetch(`${SPRING_BOOT_URL}/doctors/${doctorId}/patients`, {
       headers: getSpringHeaders(),
     });
-    if (!res.ok) throw new Error('Failed to fetch patients');
-    return res.json();
+    return handleApiResponse(res);
   },
 
   async getPatient(patientId: string): Promise<Patient | null> {
@@ -169,8 +168,7 @@ export const flaskAiApi = {
       headers: getFlaskHeaders(),
       body: JSON.stringify(data),
     });
-    if (!res.ok) throw new Error('Failed to analyze emotion');
-    return res.json();
+    return handleApiResponse(res);
   },
 
   async analyzeChatMessages(data: ChatAnalysisRequest): Promise<ChatAnalysis> {
@@ -179,8 +177,7 @@ export const flaskAiApi = {
       headers: getFlaskHeaders(),
       body: JSON.stringify(data),
     });
-    if (!res.ok) throw new Error('Failed to analyze chat');
-    return res.json();
+    return handleApiResponse(res);
   },
 
   async generateSessionSummary(data: SessionSummaryRequest): Promise<{ summary: string }> {
@@ -189,7 +186,6 @@ export const flaskAiApi = {
       headers: getFlaskHeaders(),
       body: JSON.stringify(data),
     });
-    if (!res.ok) throw new Error('Failed to generate summary');
-    return res.json();
+    return handleApiResponse(res);
   },
 };

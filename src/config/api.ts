@@ -16,18 +16,51 @@ export const API_CONFIG = {
   USE_MOCK: import.meta.env.VITE_USE_MOCK !== 'false',
 };
 
+// Storage key for JWT token
+const AUTH_TOKEN_KEY = 'mindcarex_auth_token';
+
 // Helper to get auth token for API calls
 export const getAuthToken = (): string | null => {
-  return localStorage.getItem('mindcarex_auth_token');
+  return localStorage.getItem(AUTH_TOKEN_KEY);
 };
 
-// Common headers for Spring Boot API calls
-export const getSpringHeaders = (): HeadersInit => ({
-  'Content-Type': 'application/json',
-  ...(getAuthToken() && { Authorization: `Bearer ${getAuthToken()}` }),
-});
+// Helper to set auth token
+export const setAuthToken = (token: string | null): void => {
+  if (token) {
+    localStorage.setItem(AUTH_TOKEN_KEY, token);
+  } else {
+    localStorage.removeItem(AUTH_TOKEN_KEY);
+  }
+};
+
+// Common headers for Spring Boot API calls (with JWT auth)
+export const getSpringHeaders = (): HeadersInit => {
+  const token = getAuthToken();
+  return {
+    'Content-Type': 'application/json',
+    ...(token && { Authorization: `Bearer ${token}` }),
+  };
+};
 
 // Common headers for Flask API calls
 export const getFlaskHeaders = (): HeadersInit => ({
   'Content-Type': 'application/json',
 });
+
+// Helper to handle API responses with auth errors
+export const handleApiResponse = async <T>(response: Response): Promise<T> => {
+  if (response.status === 401) {
+    // Token expired or invalid - clear auth state
+    setAuthToken(null);
+    localStorage.removeItem('mindcarex_auth_user');
+    window.location.href = '/login';
+    throw new Error('Session expired. Please login again.');
+  }
+  
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: 'Request failed' }));
+    throw new Error(error.message || 'Request failed');
+  }
+  
+  return response.json();
+};

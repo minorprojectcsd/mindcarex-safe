@@ -130,8 +130,8 @@ export const sessionApi = {
       await delay(300);
       return mockChatMessages.filter(m => m.sessionId === sessionId);
     }
-    const messages = await springSessionApi.getMessages(sessionId);
-    return messages.map((m: any) => ({
+    const messages = await springSessionApi.getMessages(sessionId) as any[];
+    return messages.map((m) => ({
       id: m.id,
       sessionId: m.session_id,
       senderId: m.sender_id,
