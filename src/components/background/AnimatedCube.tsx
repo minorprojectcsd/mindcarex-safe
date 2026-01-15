@@ -40,31 +40,31 @@ export default function AnimatedCube() {
           width: 100%;
           height: 100%;
           opacity: 0.4;
-          border: 1px solid hsl(var(--primary) / 0.3);
+          border: 1px solid hsl(174 62% 38% / 0.3);
         }
         .front {
           transform: rotateY(0deg) translateZ(100px);
-          background: linear-gradient(135deg, hsl(var(--primary) / 0.3), hsl(var(--primary) / 0.1));
+          background: linear-gradient(135deg, hsl(174 62% 38% / 0.3), hsl(174 62% 38% / 0.1));
         }
         .right {
           transform: rotateY(90deg) translateZ(100px);
-          background: linear-gradient(135deg, hsl(var(--accent) / 0.3), hsl(var(--accent) / 0.1));
+          background: linear-gradient(135deg, hsl(12 80% 62% / 0.3), hsl(12 80% 62% / 0.1));
         }
         .back {
           transform: rotateY(180deg) translateZ(100px);
-          background: linear-gradient(135deg, hsl(var(--secondary) / 0.3), hsl(var(--secondary) / 0.1));
+          background: linear-gradient(135deg, hsl(210 20% 94% / 0.3), hsl(210 20% 94% / 0.1));
         }
         .left {
           transform: rotateY(-90deg) translateZ(100px);
-          background: linear-gradient(135deg, hsl(var(--muted) / 0.5), hsl(var(--muted) / 0.2));
+          background: linear-gradient(135deg, hsl(210 15% 95% / 0.5), hsl(210 15% 95% / 0.2));
         }
         .top {
           transform: rotateX(90deg) translateZ(100px);
-          background: linear-gradient(135deg, hsl(var(--primary) / 0.2), hsl(var(--accent) / 0.2));
+          background: linear-gradient(135deg, hsl(174 62% 38% / 0.2), hsl(12 80% 62% / 0.2));
         }
         .bottom {
           transform: rotateX(-90deg) translateZ(100px);
-          background: linear-gradient(135deg, hsl(var(--secondary) / 0.2), hsl(var(--primary) / 0.2));
+          background: linear-gradient(135deg, hsl(210 20% 94% / 0.2), hsl(174 62% 38% / 0.2));
         }
       `}</style>
     </div>
