@@ -14,7 +14,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ["'Plus Jakarta Sans'", "system-ui", "sans-serif"],
+        sans: ["'Roboto'", "system-ui", "sans-serif"],
         orbitron: ["'Orbitron'", "sans-serif"],
       },
       colors: {
