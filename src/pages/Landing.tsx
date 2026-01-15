@@ -21,8 +21,8 @@ export default function Landing() {
         <img src={mindcareLogo} alt="mindcarex Logo" className="mx-auto mb-6 h-32 w-auto" />
         
         {/* Company Name */}
-        <h1 className="text-5xl font-bold tracking-tight md:text-7xl">
-          mindcarex
+        <h1 className="font-orbitron text-5xl font-bold tracking-tight md:text-7xl">
+          mindcareX
         </h1>
         
         {/* Tagline */}

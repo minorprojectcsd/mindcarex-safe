@@ -38,7 +38,7 @@ export default function Login() {
         {/* Logo */}
         <div className="mb-8 text-center">
           <img src={mindcareLogo} alt="mindcarex Logo" className="mx-auto mb-4 h-14 w-14 rounded-xl object-contain shadow-glow" />
-          <h1 className="text-2xl font-bold">mindcarex</h1>
+          <h1 className="font-orbitron text-2xl font-bold">mindcareX</h1>
           <p className="mt-1 text-muted-foreground">Mental Health Platform</p>
         </div>
 

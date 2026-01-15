@@ -52,7 +52,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       <div className="flex h-16 items-center gap-3 border-b border-sidebar-border px-6">
         <img src={mindcareLogo} alt="MindCare Logo" className="h-9 w-9 rounded-lg object-contain" />
         <div>
-          <span className="font-semibold text-sidebar-foreground">MindCare</span>
+          <span className="font-orbitron font-semibold text-sidebar-foreground">mindcareX</span>
           <p className="text-xs text-muted-foreground">Mental Health Platform</p>
         </div>
       </div>
@@ -136,7 +136,7 @@ export function Sidebar() {
       <div className="fixed left-0 right-0 top-0 z-50 flex h-14 items-center justify-between border-b border-border bg-background px-4 md:hidden">
         <div className="flex items-center gap-2">
           <img src={mindcareLogo} alt="MindCare Logo" className="h-8 w-8 rounded-lg object-contain" />
-          <span className="font-semibold text-foreground">MindCare</span>
+          <span className="font-orbitron font-semibold text-foreground">mindcareX</span>
         </div>
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
