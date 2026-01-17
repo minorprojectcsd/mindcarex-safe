@@ -63,35 +63,43 @@ export default function Landing() {
 
       <style>{`
         .logo-3d-container {
-          perspective: 1000px;
+          perspective: 1200px;
         }
         
         .logo-3d {
           transform-style: preserve-3d;
-          animation: float3d 6s ease-in-out infinite;
-          filter: drop-shadow(0 20px 40px rgba(45, 137, 124, 0.3))
-                  drop-shadow(0 10px 20px rgba(0, 0, 0, 0.2));
+          animation: rotate3d 12s linear infinite;
+          filter: drop-shadow(0 20px 40px rgba(45, 137, 124, 0.4))
+                  drop-shadow(0 10px 20px rgba(0, 0, 0, 0.3));
         }
         
-        @keyframes float3d {
-          0%, 100% {
-            transform: translateY(0) rotateX(0deg) rotateY(0deg);
+        @keyframes rotate3d {
+          0% {
+            transform: translateY(0) rotateX(0deg) rotateY(0deg) rotateZ(0deg);
           }
-          25% {
-            transform: translateY(-10px) rotateX(5deg) rotateY(-5deg);
+          20% {
+            transform: translateY(-12px) rotateX(15deg) rotateY(72deg) rotateZ(5deg);
           }
-          50% {
-            transform: translateY(-15px) rotateX(0deg) rotateY(5deg);
+          40% {
+            transform: translateY(-8px) rotateX(-10deg) rotateY(144deg) rotateZ(-3deg);
           }
-          75% {
-            transform: translateY(-8px) rotateX(-5deg) rotateY(0deg);
+          60% {
+            transform: translateY(-15px) rotateX(12deg) rotateY(216deg) rotateZ(4deg);
+          }
+          80% {
+            transform: translateY(-5px) rotateX(-8deg) rotateY(288deg) rotateZ(-2deg);
+          }
+          100% {
+            transform: translateY(0) rotateX(0deg) rotateY(360deg) rotateZ(0deg);
           }
         }
         
         .logo-3d:hover {
           animation-play-state: paused;
-          transform: translateY(-20px) rotateX(10deg) rotateY(10deg) scale(1.1);
-          transition: transform 0.3s ease-out;
+          transform: translateY(-20px) rotateX(20deg) rotateY(20deg) scale(1.15);
+          transition: transform 0.4s ease-out;
+          filter: drop-shadow(0 25px 50px rgba(45, 137, 124, 0.5))
+                  drop-shadow(0 15px 30px rgba(0, 0, 0, 0.4));
         }
       `}</style>
     </div>
