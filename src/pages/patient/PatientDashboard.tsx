@@ -1,5 +1,5 @@
 import { format } from 'date-fns';
-import { Calendar, Clock, CheckCircle, Heart, Video, CalendarPlus } from 'lucide-react';
+import { Calendar, Clock, CheckCircle, Heart, CalendarPlus, Video } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
@@ -7,7 +7,7 @@ import { StatsCard } from '@/components/dashboard/StatsCard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
-import { appointmentService } from '@/services/appointmentService';
+import { appointmentService, PatientAppointment } from '@/services/appointmentService';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -20,13 +20,12 @@ export default function PatientDashboard() {
     queryFn: appointmentService.getMyAppointments,
   });
 
-  const upcomingAppointments = appointments?.filter(a => a.status === 'BOOKED') || [];
-  const completedAppointments = appointments?.filter(a => a.status === 'COMPLETED') || [];
+  const scheduled = appointments?.filter(a => a.status === 'SCHEDULED') || [];
+  const completed = appointments?.filter(a => a.status === 'COMPLETED') || [];
 
   return (
     <DashboardLayout requireRole="PATIENT">
       <div className="space-y-6 md:space-y-8">
-        {/* Welcome Section */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold md:text-3xl">
@@ -48,37 +47,17 @@ export default function PatientDashboard() {
           </div>
         </div>
 
-        {/* Stats */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatsCard
-            title="Total Sessions"
-            value={appointments?.length || 0}
-            icon={<Calendar className="h-6 w-6" />}
-          />
-          <StatsCard
-            title="Completed"
-            value={completedAppointments.length}
-            icon={<CheckCircle className="h-6 w-6" />}
-          />
-          <StatsCard
-            title="Upcoming"
-            value={upcomingAppointments.length}
-            icon={<Clock className="h-6 w-6" />}
-          />
-          <StatsCard
-            title="Wellness Score"
-            value="--"
-            icon={<Heart className="h-6 w-6" />}
-          />
+          <StatsCard title="Total Sessions" value={appointments?.length || 0} icon={<Calendar className="h-6 w-6" />} />
+          <StatsCard title="Completed" value={completed.length} icon={<CheckCircle className="h-6 w-6" />} />
+          <StatsCard title="Upcoming" value={scheduled.length} icon={<Clock className="h-6 w-6" />} />
+          <StatsCard title="Wellness Score" value="--" icon={<Heart className="h-6 w-6" />} />
         </div>
 
-        {/* Upcoming Sessions */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Upcoming Appointments</CardTitle>
-            <Button variant="outline" size="sm" onClick={() => navigate('/patient/appointments')}>
-              View All
-            </Button>
+            <Button variant="outline" size="sm" onClick={() => navigate('/patient/appointments')}>View All</Button>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -86,35 +65,31 @@ export default function PatientDashboard() {
                 <Skeleton className="h-16 w-full" />
                 <Skeleton className="h-16 w-full" />
               </div>
-            ) : upcomingAppointments.length === 0 ? (
+            ) : scheduled.length === 0 ? (
               <div className="py-8 text-center">
                 <Calendar className="mx-auto h-12 w-12 text-muted-foreground" />
-                <p className="mt-4 text-muted-foreground">
-                  No upcoming appointments
-                </p>
-                <Button 
-                  className="mt-4" 
-                  onClick={() => navigate('/patient/book-appointment')}
-                >
+                <p className="mt-4 text-muted-foreground">No upcoming appointments</p>
+                <Button className="mt-4" onClick={() => navigate('/patient/book-appointment')}>
                   Book an Appointment
                 </Button>
               </div>
             ) : (
               <div className="space-y-4">
-                {upcomingAppointments.slice(0, 3).map((apt) => (
-                  <div 
-                    key={apt.id} 
-                    className="flex items-center justify-between rounded-lg border p-4"
-                  >
+                {scheduled.slice(0, 3).map((apt: PatientAppointment) => (
+                  <div key={apt.id} className="flex items-center justify-between rounded-lg border p-4">
                     <div>
-                      <p className="font-medium">
-                        Dr. {apt.doctor?.name || apt.doctor?.email || 'Doctor'}
-                      </p>
+                      <p className="font-medium">Dr. {apt.doctor?.fullName || 'Doctor'}</p>
                       <p className="text-sm text-muted-foreground">
-                        {format(new Date(apt.startTime), 'MMM d, yyyy h:mm a')}
+                        {format(new Date(apt.scheduledAt), 'MMM d, yyyy · h:mm a')}
                       </p>
                     </div>
-                    <Badge variant="secondary">{apt.status}</Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary">{apt.status}</Badge>
+                      <Button size="sm" variant="outline" onClick={() => navigate(`/video/${apt.id}`)}>
+                        <Video className="mr-1 h-3 w-3" />
+                        Join
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
