@@ -1,14 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { format } from 'date-fns';
 import { Calendar, Clock, User, ArrowLeft, Loader2 } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { appointmentService, Doctor } from '@/services/appointmentService';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -18,8 +17,8 @@ export default function BookAppointment() {
   const { toast } = useToast();
   
   const [selectedDoctor, setSelectedDoctor] = useState<string>('');
-  const [startTime, setStartTime] = useState('');
-  const [endTime, setEndTime] = useState('');
+  const [scheduledAt, setScheduledAt] = useState('');
+  const [notes, setNotes] = useState('');
 
   const { data: doctors, isLoading: loadingDoctors } = useQuery({
     queryKey: ['doctors'],
@@ -47,10 +46,10 @@ export default function BookAppointment() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedDoctor || !startTime || !endTime) {
+    if (!selectedDoctor || !scheduledAt) {
       toast({
         title: 'Missing Information',
-        description: 'Please fill in all fields.',
+        description: 'Please select a doctor and time.',
         variant: 'destructive',
       });
       return;
@@ -58,15 +57,14 @@ export default function BookAppointment() {
 
     bookMutation.mutate({
       doctorId: selectedDoctor,
-      startTime: new Date(startTime).toISOString(),
-      endTime: new Date(endTime).toISOString(),
+      scheduledAt: new Date(scheduledAt).toISOString(),
+      notes: notes || undefined,
     });
   };
 
   return (
     <DashboardLayout requireRole="PATIENT">
       <div className="mx-auto max-w-2xl space-y-6">
-        {/* Header */}
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
             <ArrowLeft className="h-5 w-5" />
@@ -77,7 +75,6 @@ export default function BookAppointment() {
           </div>
         </div>
 
-        {/* Doctor Selection */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -107,7 +104,7 @@ export default function BookAppointment() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="font-medium">
-                          Dr. {doctor.name || doctor.email}
+                          {doctor.fullName || doctor.name || doctor.email || 'Doctor'}
                         </p>
                         {doctor.specialization && (
                           <p className="text-sm text-muted-foreground">
@@ -132,38 +129,35 @@ export default function BookAppointment() {
           </CardContent>
         </Card>
 
-        {/* Time Selection */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Clock className="h-5 w-5" />
-              Select Time
+              Schedule
             </CardTitle>
             <CardDescription>Choose your preferred appointment time</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="startTime">Start Time</Label>
-                  <Input
-                    id="startTime"
-                    type="datetime-local"
-                    value={startTime}
-                    onChange={(e) => setStartTime(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="endTime">End Time</Label>
-                  <Input
-                    id="endTime"
-                    type="datetime-local"
-                    value={endTime}
-                    onChange={(e) => setEndTime(e.target.value)}
-                    required
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="scheduledAt">Appointment Date & Time</Label>
+                <Input
+                  id="scheduledAt"
+                  type="datetime-local"
+                  value={scheduledAt}
+                  onChange={(e) => setScheduledAt(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="notes">Notes (optional)</Label>
+                <Textarea
+                  id="notes"
+                  placeholder="Describe how you're feeling..."
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                />
               </div>
 
               <Button 
