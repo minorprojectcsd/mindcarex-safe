@@ -18,7 +18,7 @@ export default function MyAppointments() {
     queryFn: appointmentService.getMyAppointments,
   });
 
-  const scheduled = appointments?.filter(a => a.status === 'BOOKED' || a.status === 'SCHEDULED') || [];
+  const scheduled = appointments?.filter(a => ['BOOKED', 'SCHEDULED', 'IN_PROGRESS'].includes(a.status)) || [];
   const completed = appointments?.filter(a => a.status === 'COMPLETED') || [];
   const cancelled = appointments?.filter(a => a.status === 'CANCELLED') || [];
 
@@ -38,14 +38,21 @@ export default function MyAppointments() {
       <div className="flex items-center gap-2">
         <Badge 
           variant={
-            appointment.status === 'SCHEDULED' ? 'default' : 
-            appointment.status === 'COMPLETED' ? 'secondary' : 
+            appointment.status === 'IN_PROGRESS' ? 'default' :
+            appointment.status === 'BOOKED' || appointment.status === 'SCHEDULED' ? 'secondary' : 
+            appointment.status === 'COMPLETED' ? 'outline' : 
             'destructive'
           }
         >
-          {appointment.status}
+          {appointment.status === 'IN_PROGRESS' ? '🟢 Live' : appointment.status}
         </Badge>
-        {appointment.status === 'SCHEDULED' && (
+        {appointment.status === 'IN_PROGRESS' && (
+          <Button size="sm" onClick={() => navigate(`/video/${appointment.sessionId || appointment.id}`)}>
+            <Video className="mr-1 h-3 w-3" />
+            Join Now
+          </Button>
+        )}
+        {(appointment.status === 'BOOKED' || appointment.status === 'SCHEDULED') && (
           <Button size="sm" variant="outline" onClick={() => navigate(`/video/${appointment.id}`)}>
             <Video className="mr-1 h-3 w-3" />
             Join

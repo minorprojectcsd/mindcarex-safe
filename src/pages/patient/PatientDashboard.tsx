@@ -20,7 +20,7 @@ export default function PatientDashboard() {
     queryFn: appointmentService.getMyAppointments,
   });
 
-  const scheduled = appointments?.filter(a => a.status === 'SCHEDULED') || [];
+  const scheduled = appointments?.filter(a => ['BOOKED', 'SCHEDULED', 'IN_PROGRESS'].includes(a.status)) || [];
   const completed = appointments?.filter(a => a.status === 'COMPLETED') || [];
 
   return (
@@ -84,11 +84,20 @@ export default function PatientDashboard() {
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant="secondary">{apt.status}</Badge>
-                      <Button size="sm" variant="outline" onClick={() => navigate(`/video/${apt.id}`)}>
-                        <Video className="mr-1 h-3 w-3" />
-                        Join
-                      </Button>
+                      <Badge variant={apt.status === 'IN_PROGRESS' ? 'default' : 'secondary'}>
+                        {apt.status === 'IN_PROGRESS' ? '🟢 Live' : apt.status}
+                      </Badge>
+                      {apt.status === 'IN_PROGRESS' ? (
+                        <Button size="sm" onClick={() => navigate(`/video/${apt.sessionId || apt.id}`)}>
+                          <Video className="mr-1 h-3 w-3" />
+                          Join Now
+                        </Button>
+                      ) : (
+                        <Button size="sm" variant="outline" onClick={() => navigate(`/video/${apt.id}`)}>
+                          <Video className="mr-1 h-3 w-3" />
+                          Join
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ))}
