@@ -12,11 +12,12 @@ export interface PatientAppointment {
   id: string;
   doctor: {
     id: string;
-    fullName: string;
+    name: string;
     specialization?: string;
   };
-  scheduledAt: string;
-  status: 'SCHEDULED' | 'COMPLETED' | 'CANCELLED';
+  startTime: string;
+  endTime: string;
+  status: 'BOOKED' | 'SCHEDULED' | 'COMPLETED' | 'CANCELLED';
   notes?: string;
 }
 
@@ -26,15 +27,16 @@ export interface DoctorAppointment {
     id: string;
     fullName: string;
   };
-  scheduledAt: string;
-  status: 'SCHEDULED' | 'COMPLETED' | 'CANCELLED';
+  startTime: string;
+  endTime: string;
+  status: 'BOOKED' | 'SCHEDULED' | 'COMPLETED' | 'CANCELLED';
   notes?: string;
 }
 
 export interface CreateAppointmentRequest {
   doctorId: string;
-  scheduledAt: string;
-  notes?: string;
+  startTime: string;
+  endTime: string;
 }
 
 export const appointmentService = {

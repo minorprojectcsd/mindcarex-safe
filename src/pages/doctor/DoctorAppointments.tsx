@@ -44,7 +44,7 @@ export default function DoctorAppointments() {
       <div>
         <p className="font-medium">{appointment.patient?.fullName || 'Patient'}</p>
         <p className="text-sm text-muted-foreground">
-          {format(new Date(appointment.scheduledAt), 'EEEE, MMMM d, yyyy · h:mm a')}
+          {format(new Date(appointment.startTime), 'EEEE, MMMM d, yyyy · h:mm a')}
         </p>
       </div>
       <div className="flex items-center gap-2">
