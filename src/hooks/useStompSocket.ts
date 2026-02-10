@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import SockJS from 'sockjs-client';
 import { Client, IMessage } from '@stomp/stompjs';
 import { UserRole } from '@/types';
 
@@ -26,6 +25,7 @@ interface UseStompSocketOptions {
 }
 
 const WS_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+const WS_URL = WS_BASE.replace(/^http/, 'ws') + '/ws';
 
 export function useStompSocket({
   sessionId,
@@ -43,8 +43,10 @@ export function useStompSocket({
     if (!sessionId) return;
 
     const client = new Client({
-      webSocketFactory: () => new SockJS(`${WS_BASE}/ws`),
+      brokerURL: WS_URL,
       reconnectDelay: 5000,
+      heartbeatIncoming: 4000,
+      heartbeatOutgoing: 4000,
       onConnect: () => {
         setIsConnected(true);
         console.log('[STOMP] Connected to session:', sessionId);
