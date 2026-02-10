@@ -17,7 +17,8 @@ export interface PatientAppointment {
   };
   startTime: string;
   endTime: string;
-  status: 'BOOKED' | 'SCHEDULED' | 'COMPLETED' | 'CANCELLED';
+  status: 'BOOKED' | 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+  sessionId?: string;
   notes?: string;
 }
 
@@ -29,7 +30,8 @@ export interface DoctorAppointment {
   };
   startTime: string;
   endTime: string;
-  status: 'BOOKED' | 'SCHEDULED' | 'COMPLETED' | 'CANCELLED';
+  status: 'BOOKED' | 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+  sessionId?: string;
   notes?: string;
 }
 
