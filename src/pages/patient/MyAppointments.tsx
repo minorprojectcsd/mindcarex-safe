@@ -18,7 +18,7 @@ export default function MyAppointments() {
     queryFn: appointmentService.getMyAppointments,
   });
 
-  const scheduled = appointments?.filter(a => a.status === 'SCHEDULED') || [];
+  const scheduled = appointments?.filter(a => a.status === 'BOOKED' || a.status === 'SCHEDULED') || [];
   const completed = appointments?.filter(a => a.status === 'COMPLETED') || [];
   const cancelled = appointments?.filter(a => a.status === 'CANCELLED') || [];
 
@@ -26,13 +26,13 @@ export default function MyAppointments() {
     <div className="flex items-center justify-between rounded-lg border p-4">
       <div>
         <p className="font-medium">
-          Dr. {appointment.doctor?.fullName || 'Doctor'}
+          Dr. {appointment.doctor?.name || 'Doctor'}
         </p>
         {appointment.doctor?.specialization && (
           <p className="text-xs text-muted-foreground">{appointment.doctor.specialization}</p>
         )}
         <p className="text-sm text-muted-foreground">
-          {format(new Date(appointment.scheduledAt), 'EEEE, MMMM d, yyyy · h:mm a')}
+          {format(new Date(appointment.startTime), 'EEEE, MMMM d, yyyy · h:mm a')}
         </p>
       </div>
       <div className="flex items-center gap-2">

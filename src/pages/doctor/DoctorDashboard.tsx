@@ -36,11 +36,11 @@ export default function DoctorDashboard() {
   });
 
   const todayAppointments = appointments?.filter(a => {
-    const aptDate = new Date(a.scheduledAt).toDateString();
-    return aptDate === new Date().toDateString() && a.status === 'SCHEDULED';
+    const aptDate = new Date(a.startTime).toDateString();
+    return aptDate === new Date().toDateString() && (a.status === 'SCHEDULED' || a.status === 'BOOKED');
   }) || [];
 
-  const upcoming = appointments?.filter(a => a.status === 'SCHEDULED') || [];
+  const upcoming = appointments?.filter(a => a.status === 'SCHEDULED' || a.status === 'BOOKED') || [];
   const uniquePatients = new Set(appointments?.map(a => a.patient?.id)).size;
 
   return (
@@ -89,7 +89,7 @@ export default function DoctorDashboard() {
                     <div>
                       <p className="font-medium">{apt.patient?.fullName || 'Patient'}</p>
                       <p className="text-sm text-muted-foreground">
-                        {format(new Date(apt.scheduledAt), 'h:mm a')}
+                        {format(new Date(apt.startTime), 'h:mm a')}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -124,7 +124,7 @@ export default function DoctorDashboard() {
                     <div>
                       <p className="font-medium">{apt.patient?.fullName || 'Patient'}</p>
                       <p className="text-sm text-muted-foreground">
-                        {format(new Date(apt.scheduledAt), 'MMM d, yyyy · h:mm a')}
+                        {format(new Date(apt.startTime), 'MMM d, yyyy · h:mm a')}
                       </p>
                     </div>
                     <Badge>{apt.status}</Badge>

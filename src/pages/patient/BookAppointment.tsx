@@ -55,10 +55,14 @@ export default function BookAppointment() {
       return;
     }
 
+    const start = new Date(scheduledAt);
+    const end = new Date(start);
+    end.setHours(end.getHours() + 1);
+
     bookMutation.mutate({
       doctorId: selectedDoctor,
-      scheduledAt: new Date(scheduledAt).toISOString(),
-      notes: notes || undefined,
+      startTime: start.toISOString(),
+      endTime: end.toISOString(),
     });
   };
 

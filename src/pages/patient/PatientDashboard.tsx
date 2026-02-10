@@ -78,9 +78,9 @@ export default function PatientDashboard() {
                 {scheduled.slice(0, 3).map((apt: PatientAppointment) => (
                   <div key={apt.id} className="flex items-center justify-between rounded-lg border p-4">
                     <div>
-                      <p className="font-medium">Dr. {apt.doctor?.fullName || 'Doctor'}</p>
+                      <p className="font-medium">Dr. {apt.doctor?.name || 'Doctor'}</p>
                       <p className="text-sm text-muted-foreground">
-                        {format(new Date(apt.scheduledAt), 'MMM d, yyyy · h:mm a')}
+                        {format(new Date(apt.startTime), 'MMM d, yyyy · h:mm a')}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
