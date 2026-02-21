@@ -61,4 +61,9 @@ export const appointmentService = {
     const response = await api.get<DoctorAppointment[]>('/api/doctor/appointments');
     return response.data;
   },
+
+  async cancelAppointment(appointmentId: string): Promise<any> {
+    const response = await api.post(`/api/appointments/${appointmentId}/cancel`);
+    return response.data;
+  },
 };
