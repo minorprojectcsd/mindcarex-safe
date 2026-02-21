@@ -25,9 +25,12 @@ export const authService = {
     const response = await api.post<AuthResponse>('/api/auth/login', data);
     const { token, role } = response.data;
     
-    // Store token and role in localStorage
+    // Store token, role, and userId in localStorage
     localStorage.setItem('token', token);
     localStorage.setItem('role', role);
+    if (response.data.userId) {
+      localStorage.setItem('userId', response.data.userId);
+    }
     
     return response.data;
   },
@@ -39,6 +42,7 @@ export const authService = {
   logout(): void {
     localStorage.removeItem('token');
     localStorage.removeItem('role');
+    localStorage.removeItem('userId');
     localStorage.removeItem('mindcarex_auth_user');
   },
 

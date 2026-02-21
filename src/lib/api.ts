@@ -28,6 +28,7 @@ api.interceptors.response.use(
       // Token expired or invalid - clear storage and redirect
       localStorage.removeItem('token');
       localStorage.removeItem('role');
+      localStorage.removeItem('userId');
       localStorage.removeItem('mindcarex_auth_user');
       window.location.href = '/login';
     } else if (error.response?.status === 403) {

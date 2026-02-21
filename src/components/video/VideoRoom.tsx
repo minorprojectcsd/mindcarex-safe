@@ -1,21 +1,22 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Mic,
-  MicOff,
-  Video,
-  VideoOff,
   PhoneOff,
   MessageSquare,
-  Maximize,
-  Minimize,
+  Send,
+  Download,
+  Users,
 } from 'lucide-react';
+import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
-import { useWebRTC } from '@/hooks/useWebRTC';
+import { useStompSocket, StompChatMessage } from '@/hooks/useStompSocket';
+import { sessionService } from '@/services/sessionService';
 import { ConsentSettings } from '@/types';
-import { ChatPanel } from './ChatPanel';
 import { cn } from '@/lib/utils';
 
 interface VideoRoomProps {
@@ -27,70 +28,50 @@ interface VideoRoomProps {
 export function VideoRoom({ sessionId, consent, onEnd }: VideoRoomProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
-  const [connectionState, setConnectionState] = useState<RTCPeerConnectionState>('new');
-  const [isChatOpen, setIsChatOpen] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  
-  const localVideoRef = useRef<HTMLVideoElement>(null);
-  const remoteVideoRef = useRef<HTMLVideoElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [messages, setMessages] = useState<StompChatMessage[]>([]);
+  const [input, setInput] = useState('');
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  const handleFrameCapture = useCallback((frame: ImageData) => {
-    // Send frame to Flask backend for emotion analysis
-    console.log('[VideoRoom] Frame captured:', frame.width, 'x', frame.height);
-    // In production: POST to Flask API
-  }, []);
+  // Load chat history on mount
+  useEffect(() => {
+    if (!sessionId.startsWith('demo')) {
+      sessionService.getChatHistory(sessionId)
+        .then((history) => setMessages(history))
+        .catch((err) => console.warn('Could not load chat history:', err));
+    }
+  }, [sessionId]);
 
-  const {
-    localStream,
-    isAudioMuted,
-    isVideoOff,
-    startCall,
-    toggleAudio,
-    toggleVideo,
-    endCall,
-    startFrameCapture,
-  } = useWebRTC({
+  const { sendChatMessage, isConnected } = useStompSocket({
     sessionId,
     userId: user?.id || '',
-    consent,
-    onRemoteStream: setRemoteStream,
-    onConnectionStateChange: setConnectionState,
-    onFrameCapture: consent.emotionTrackingEnabled ? handleFrameCapture : undefined,
+    userRole: user?.role || 'PATIENT',
+    onChatMessage: (msg) => {
+      setMessages((prev) => [...prev, msg]);
+    },
   });
 
-  // Initialize video call
+  // Auto-scroll on new messages
   useEffect(() => {
-    startCall().catch(console.error);
-    return () => {
-      endCall();
-    };
-  }, [startCall, endCall]);
-
-  // Set up local video
-  useEffect(() => {
-    if (localStream && localVideoRef.current) {
-      localVideoRef.current.srcObject = localStream;
-      
-      // Start frame capture for emotion analysis
-      if (consent.emotionTrackingEnabled) {
-        startFrameCapture(localVideoRef.current, 1000);
-      }
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [localStream, consent.emotionTrackingEnabled, startFrameCapture]);
+  }, [messages]);
 
-  // Set up remote video
-  useEffect(() => {
-    if (remoteStream && remoteVideoRef.current) {
-      remoteVideoRef.current.srcObject = remoteStream;
+  const handleSend = () => {
+    if (!input.trim()) return;
+    sendChatMessage(input.trim());
+    setInput('');
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
     }
-  }, [remoteStream]);
+  };
 
-  const handleEndCall = () => {
-    endCall();
+  const handleEndSession = () => {
     onEnd?.();
-    // Navigate based on user role
     const role = localStorage.getItem('role');
     if (role === 'DOCTOR') {
       navigate('/doctor/dashboard');
@@ -101,155 +82,110 @@ export function VideoRoom({ sessionId, consent, onEnd }: VideoRoomProps) {
     }
   };
 
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement && containerRef.current) {
-      containerRef.current.requestFullscreen();
-      setIsFullscreen(true);
-    } else {
-      document.exitFullscreen();
-      setIsFullscreen(false);
-    }
+  const handleExport = () => {
+    const content = messages
+      .map((m) => `[${m.timestamp || 'N/A'}] ${m.senderRole}: ${m.message}`)
+      .join('\n');
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `chat-transcript-${sessionId}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
-    <div
-      ref={containerRef}
-      className={cn(
-        'flex h-full min-h-[calc(100vh-4rem)] gap-4',
-        isFullscreen && 'bg-background p-4'
-      )}
-    >
-      {/* Main video area */}
-      <div className="relative flex-1">
-        {/* Remote video (main view) */}
-        <div className="relative h-full overflow-hidden rounded-2xl bg-muted">
-          {remoteStream ? (
-            <video
-              ref={remoteVideoRef}
-              autoPlay
-              playsInline
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <div className="flex h-full items-center justify-center">
-              <div className="text-center">
-                <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-secondary">
-                  <Video className="h-12 w-12 text-muted-foreground" />
-                </div>
-                <p className="text-lg font-medium text-muted-foreground">
-                  Waiting for participant...
-                </p>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Connection: {connectionState}
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Connection indicator */}
-          <div className="absolute left-4 top-4">
-            <div
-              className={cn(
-                'flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium backdrop-blur-sm',
-                connectionState === 'connected'
-                  ? 'bg-success/20 text-success'
-                  : 'bg-muted/80 text-muted-foreground'
-              )}
-            >
-              <span
-                className={cn(
-                  'h-2 w-2 rounded-full',
-                  connectionState === 'connected'
-                    ? 'animate-pulse-soft bg-success'
-                    : 'bg-muted-foreground'
-                )}
-              />
-              {connectionState === 'connected' ? 'Live' : 'Connecting...'}
-            </div>
-          </div>
-
-          {/* Local video (picture-in-picture) */}
-          <Card className="absolute bottom-4 right-4 h-36 w-48 overflow-hidden shadow-lg">
-            {localStream && !isVideoOff ? (
-              <video
-                ref={localVideoRef}
-                autoPlay
-                playsInline
-                muted
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <div className="flex h-full items-center justify-center bg-muted">
-                <VideoOff className="h-8 w-8 text-muted-foreground" />
-              </div>
-            )}
-          </Card>
+    <div className="flex h-full flex-col">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b px-4 py-3">
+        <div className="flex items-center gap-3">
+          <MessageSquare className="h-5 w-5 text-primary" />
+          <h2 className="text-lg font-semibold">Session Chat</h2>
+          <Badge variant={isConnected ? 'default' : 'destructive'} className="text-xs">
+            {isConnected ? '🟢 Connected' : '🔴 Disconnected'}
+          </Badge>
         </div>
-
-        {/* Controls */}
-        <div className="absolute bottom-8 left-1/2 flex -translate-x-1/2 items-center gap-3">
+        <div className="flex items-center gap-2">
           <Button
-            variant={isAudioMuted ? 'control-danger' : 'control'}
-            size="icon-lg"
-            onClick={toggleAudio}
-            title={isAudioMuted ? 'Unmute' : 'Mute'}
+            variant="ghost"
+            size="sm"
+            onClick={handleExport}
+            disabled={messages.length === 0}
+            title="Download transcript"
           >
-            {isAudioMuted ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
+            <Download className="mr-1 h-4 w-4" />
+            Export
           </Button>
-
           <Button
-            variant={isVideoOff ? 'control-danger' : 'control'}
-            size="icon-lg"
-            onClick={toggleVideo}
-            title={isVideoOff ? 'Turn on camera' : 'Turn off camera'}
+            variant="destructive"
+            size="sm"
+            onClick={handleEndSession}
           >
-            {isVideoOff ? <VideoOff className="h-6 w-6" /> : <Video className="h-6 w-6" />}
-          </Button>
-
-          <Button
-            variant="control-danger"
-            size="icon-lg"
-            onClick={handleEndCall}
-            title="End call"
-          >
-            <PhoneOff className="h-6 w-6" />
-          </Button>
-
-          <div className="mx-2 h-8 w-px bg-border" />
-
-          <Button
-            variant={isChatOpen ? 'control-active' : 'control'}
-            size="icon-lg"
-            onClick={() => setIsChatOpen(!isChatOpen)}
-            title="Toggle chat"
-          >
-            <MessageSquare className="h-6 w-6" />
-          </Button>
-
-          <Button
-            variant="control"
-            size="icon-lg"
-            onClick={toggleFullscreen}
-            title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
-          >
-            {isFullscreen ? (
-              <Minimize className="h-6 w-6" />
-            ) : (
-              <Maximize className="h-6 w-6" />
-            )}
+            <PhoneOff className="mr-1 h-4 w-4" />
+            {user?.role === 'DOCTOR' ? 'End Session' : 'Leave'}
           </Button>
         </div>
       </div>
 
-      {/* Chat panel */}
-      {isChatOpen && (
-        <div className="w-80 animate-slide-in-right">
-          <ChatPanel
-            sessionId={sessionId}
-            onClose={() => setIsChatOpen(false)}
-          />
+      {/* Messages Area */}
+      <ScrollArea className="flex-1 p-4" ref={scrollRef}>
+        <div className="mx-auto max-w-2xl space-y-4">
+          {messages.length === 0 ? (
+            <div className="flex h-64 flex-col items-center justify-center text-center">
+              <Users className="mb-4 h-12 w-12 text-muted-foreground/50" />
+              <p className="text-lg font-medium text-muted-foreground">No messages yet</p>
+              <p className="mt-1 text-sm text-muted-foreground">Start the conversation!</p>
+            </div>
+          ) : (
+            messages.map((message, idx) => {
+              const isOwn = message.senderId === user?.id;
+              return (
+                <div key={message.id || idx} className={cn('flex', isOwn ? 'justify-end' : 'justify-start')}>
+                  <div className={cn(
+                    'max-w-[70%] rounded-2xl px-4 py-2.5',
+                    isOwn
+                      ? 'rounded-br-md bg-primary text-primary-foreground'
+                      : 'rounded-bl-md bg-secondary text-secondary-foreground'
+                  )}>
+                    {!isOwn && (
+                      <p className="mb-1 text-xs font-medium opacity-70">
+                        {message.senderRole}
+                      </p>
+                    )}
+                    <p className="text-sm">{message.message}</p>
+                    {message.timestamp && (
+                      <p className={cn('mt-1 text-xs', isOwn ? 'text-primary-foreground/70' : 'text-muted-foreground')}>
+                        {format(new Date(message.timestamp), 'h:mm a')}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
-      )}
+      </ScrollArea>
+
+      {/* Input Area */}
+      <div className="border-t p-4">
+        <div className="mx-auto flex max-w-2xl items-center gap-2">
+          <Input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={isConnected ? 'Type a message...' : 'Reconnecting...'}
+            disabled={!isConnected}
+            className="flex-1"
+          />
+          <Button size="icon" onClick={handleSend} disabled={!input.trim() || !isConnected}>
+            <Send className="h-4 w-4" />
+          </Button>
+        </div>
+        {!isConnected && (
+          <p className="mt-2 text-center text-xs text-muted-foreground">Reconnecting to chat...</p>
+        )}
+      </div>
     </div>
   );
 }
