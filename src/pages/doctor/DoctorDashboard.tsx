@@ -19,6 +19,7 @@ export default function DoctorDashboard() {
   const { data: appointments, isLoading } = useQuery({
     queryKey: ['doctor-appointments'],
     queryFn: appointmentService.getDoctorAppointments,
+    refetchInterval: 10000,
   });
 
   const startSessionMutation = useMutation({
@@ -37,10 +38,10 @@ export default function DoctorDashboard() {
 
   const todayAppointments = appointments?.filter(a => {
     const aptDate = new Date(a.startTime).toDateString();
-    return aptDate === new Date().toDateString() && (a.status === 'SCHEDULED' || a.status === 'BOOKED');
+    return aptDate === new Date().toDateString() && ['SCHEDULED', 'BOOKED', 'IN_PROGRESS'].includes(a.status);
   }) || [];
 
-  const upcoming = appointments?.filter(a => a.status === 'SCHEDULED' || a.status === 'BOOKED') || [];
+  const upcoming = appointments?.filter(a => ['SCHEDULED', 'BOOKED'].includes(a.status)) || [];
   const uniquePatients = new Set(appointments?.map(a => a.patient?.id)).size;
 
   return (
@@ -84,27 +85,39 @@ export default function DoctorDashboard() {
               </div>
             ) : (
               <div className="space-y-4">
-                {todayAppointments.map((apt: DoctorAppointment) => (
-                  <div key={apt.id} className="flex items-center justify-between rounded-lg border p-4">
-                    <div>
-                      <p className="font-medium">{apt.patient?.fullName || 'Patient'}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {format(new Date(apt.startTime), 'h:mm a')}
-                      </p>
+                {todayAppointments.map((apt: DoctorAppointment) => {
+                  const isLive = apt.status === 'IN_PROGRESS';
+                  return (
+                    <div key={apt.id} className="flex items-center justify-between rounded-lg border p-4">
+                      <div>
+                        <p className="font-medium">{apt.patient?.fullName || 'Patient'}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {format(new Date(apt.startTime), 'h:mm a')}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={isLive ? 'default' : 'secondary'}>
+                          {isLive ? '🟢 Live' : apt.status}
+                        </Badge>
+                        {isLive ? (
+                          <Button size="sm" onClick={() => navigate(`/video/${apt.sessionId || apt.id}`)}>
+                            <Video className="mr-2 h-4 w-4" />
+                            Resume
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            disabled={startSessionMutation.isPending}
+                            onClick={() => startSessionMutation.mutate(apt.id)}
+                          >
+                            <Video className="mr-2 h-4 w-4" />
+                            Start Session
+                          </Button>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary">{apt.status}</Badge>
-                      <Button
-                        size="sm"
-                        disabled={startSessionMutation.isPending}
-                        onClick={() => startSessionMutation.mutate(apt.id)}
-                      >
-                        <Video className="mr-2 h-4 w-4" />
-                        Start Session
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </CardContent>

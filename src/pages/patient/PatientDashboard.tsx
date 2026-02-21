@@ -18,9 +18,10 @@ export default function PatientDashboard() {
   const { data: appointments, isLoading } = useQuery({
     queryKey: ['my-appointments'],
     queryFn: appointmentService.getMyAppointments,
+    refetchInterval: 10000,
   });
 
-  const scheduled = appointments?.filter(a => ['BOOKED', 'SCHEDULED', 'IN_PROGRESS'].includes(a.status)) || [];
+  const active = appointments?.filter(a => ['BOOKED', 'SCHEDULED', 'IN_PROGRESS'].includes(a.status)) || [];
   const completed = appointments?.filter(a => a.status === 'COMPLETED') || [];
 
   return (
@@ -50,7 +51,7 @@ export default function PatientDashboard() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatsCard title="Total Sessions" value={appointments?.length || 0} icon={<Calendar className="h-6 w-6" />} />
           <StatsCard title="Completed" value={completed.length} icon={<CheckCircle className="h-6 w-6" />} />
-          <StatsCard title="Upcoming" value={scheduled.length} icon={<Clock className="h-6 w-6" />} />
+          <StatsCard title="Active" value={active.length} icon={<Clock className="h-6 w-6" />} />
           <StatsCard title="Wellness Score" value="--" icon={<Heart className="h-6 w-6" />} />
         </div>
 
@@ -65,7 +66,7 @@ export default function PatientDashboard() {
                 <Skeleton className="h-16 w-full" />
                 <Skeleton className="h-16 w-full" />
               </div>
-            ) : scheduled.length === 0 ? (
+            ) : active.length === 0 ? (
               <div className="py-8 text-center">
                 <Calendar className="mx-auto h-12 w-12 text-muted-foreground" />
                 <p className="mt-4 text-muted-foreground">No upcoming appointments</p>
@@ -75,32 +76,35 @@ export default function PatientDashboard() {
               </div>
             ) : (
               <div className="space-y-4">
-                {scheduled.slice(0, 3).map((apt: PatientAppointment) => (
-                  <div key={apt.id} className="flex items-center justify-between rounded-lg border p-4">
-                    <div>
-                      <p className="font-medium">Dr. {apt.doctor?.name || 'Doctor'}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {format(new Date(apt.startTime), 'MMM d, yyyy · h:mm a')}
-                      </p>
+                {active.slice(0, 3).map((apt: PatientAppointment) => {
+                  const isLive = apt.status === 'IN_PROGRESS';
+                  return (
+                    <div key={apt.id} className="flex items-center justify-between rounded-lg border p-4">
+                      <div>
+                        <p className="font-medium">Dr. {apt.doctor?.name || 'Doctor'}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {format(new Date(apt.startTime), 'MMM d, yyyy · h:mm a')}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={isLive ? 'default' : 'secondary'}>
+                          {isLive ? '🟢 Live' : apt.status}
+                        </Badge>
+                        {isLive ? (
+                          <Button size="sm" onClick={() => navigate(`/video/${apt.sessionId || apt.id}`)}>
+                            <Video className="mr-1 h-3 w-3" />
+                            Join Now
+                          </Button>
+                        ) : (
+                          <Button size="sm" variant="outline" onClick={() => navigate(`/video/${apt.id}`)}>
+                            <Video className="mr-1 h-3 w-3" />
+                            Join
+                          </Button>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={apt.status === 'IN_PROGRESS' ? 'default' : 'secondary'}>
-                        {apt.status === 'IN_PROGRESS' ? '🟢 Live' : apt.status}
-                      </Badge>
-                      {apt.status === 'IN_PROGRESS' ? (
-                        <Button size="sm" onClick={() => navigate(`/video/${apt.sessionId || apt.id}`)}>
-                          <Video className="mr-1 h-3 w-3" />
-                          Join Now
-                        </Button>
-                      ) : (
-                        <Button size="sm" variant="outline" onClick={() => navigate(`/video/${apt.id}`)}>
-                          <Video className="mr-1 h-3 w-3" />
-                          Join
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </CardContent>
