@@ -83,7 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     
     try {
-      await authService.register({ email, password, role });
+      await authService.register({ email, password, role, fullName: name });
       // Registration successful - user should login
     } finally {
       setIsLoading(false);
