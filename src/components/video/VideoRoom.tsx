@@ -164,9 +164,21 @@ export function VideoRoom({ sessionId, consent, onEnd }: VideoRoomProps) {
       stream.getTracks().forEach((track) => pc.addTrack(track, stream));
 
       pc.ontrack = (event) => {
-        console.log('[WebRTC] Remote track received');
-        setRemoteStream(event.streams[0]);
-        if (remoteVideoRef.current) remoteVideoRef.current.srcObject = event.streams[0];
+        console.log('[WebRTC] Remote track received:', event.track.kind);
+        
+        if (remoteVideoRef.current) {
+          // Create or reuse remote stream on the video element
+          if (!remoteVideoRef.current.srcObject) {
+            remoteVideoRef.current.srcObject = new MediaStream();
+          }
+          const rs = remoteVideoRef.current.srcObject as MediaStream;
+          // Only add if not already present
+          if (!rs.getTracks().find(t => t.id === event.track.id)) {
+            rs.addTrack(event.track);
+            console.log('[WebRTC] Added remote track to video element:', event.track.kind);
+          }
+          setRemoteStream(rs);
+        }
       };
 
       pc.onicecandidate = (event) => {
@@ -174,7 +186,11 @@ export function VideoRoom({ sessionId, consent, onEnd }: VideoRoomProps) {
       };
 
       pc.onconnectionstatechange = () => {
-        console.log('[WebRTC] State:', pc.connectionState);
+        console.log('[WebRTC] Connection State:', pc.connectionState);
+      };
+
+      pc.oniceconnectionstatechange = () => {
+        console.log('[WebRTC] ICE State:', pc.iceConnectionState);
       };
 
       pcRef.current = pc;
