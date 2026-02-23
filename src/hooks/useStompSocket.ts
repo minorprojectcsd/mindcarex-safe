@@ -25,7 +25,7 @@ interface UseStompSocketOptions {
   onSignal?: (signal: StompSignal) => void;
 }
 
-const WS_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+const WS_BASE = import.meta.env.VITE_API_BASE_URL || 'https://mindcarex-backend.onrender.com';
 const WS_URL = WS_BASE.replace(/^http/, 'ws') + '/ws';
 
 export function useStompSocket({
