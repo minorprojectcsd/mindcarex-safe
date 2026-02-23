@@ -11,7 +11,6 @@ import {
   Mic,
   MicOff,
   ChevronRight,
-  ChevronLeft,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -44,7 +43,7 @@ export function VideoRoom({ sessionId, consent, onEnd }: VideoRoomProps) {
   // Chat state
   const [messages, setMessages] = useState<StompChatMessage[]>([]);
   const [input, setInput] = useState('');
-  const [showChat, setShowChat] = useState(true);
+  const [showChat, setShowChat] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Video state
@@ -59,6 +58,7 @@ export function VideoRoom({ sessionId, consent, onEnd }: VideoRoomProps) {
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const mediaInitializedRef = useRef(false);
+  const pendingCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
 
   // Load chat history
   useEffect(() => {
@@ -69,8 +69,13 @@ export function VideoRoom({ sessionId, consent, onEnd }: VideoRoomProps) {
     }
   }, [sessionId]);
 
-  // Handle incoming WebRTC signal
-  const handleSignal = useCallback(async (signal: StompSignal) => {
+  // Handle incoming WebRTC signal — filter own signals by checking senderId
+  const handleSignal = useCallback(async (signal: StompSignal & { senderId?: string }) => {
+    // Ignore our own signals echoed back
+    if (signal.senderId && signal.senderId === user?.id) {
+      return;
+    }
+
     const pc = pcRef.current;
     if (!pc) return;
 
@@ -79,23 +84,46 @@ export function VideoRoom({ sessionId, consent, onEnd }: VideoRoomProps) {
         case 'OFFER':
           console.log('[WebRTC] Received offer');
           await pc.setRemoteDescription(new RTCSessionDescription(signal.payload));
+          // Flush any ICE candidates that arrived before the offer
+          for (const c of pendingCandidatesRef.current) {
+            await pc.addIceCandidate(new RTCIceCandidate(c));
+          }
+          pendingCandidatesRef.current = [];
           const answer = await pc.createAnswer();
           await pc.setLocalDescription(answer);
           sendAnswer(answer);
+          console.log('[WebRTC] Answer sent');
           break;
+
         case 'ANSWER':
           console.log('[WebRTC] Received answer');
-          await pc.setRemoteDescription(new RTCSessionDescription(signal.payload));
+          // Only set if we're in have-local-offer state
+          if (pc.signalingState === 'have-local-offer') {
+            await pc.setRemoteDescription(new RTCSessionDescription(signal.payload));
+            // Flush any ICE candidates that arrived before the answer
+            for (const c of pendingCandidatesRef.current) {
+              await pc.addIceCandidate(new RTCIceCandidate(c));
+            }
+            pendingCandidatesRef.current = [];
+          } else {
+            console.warn('[WebRTC] Ignoring ANSWER in state:', pc.signalingState);
+          }
           break;
+
         case 'ICE':
           console.log('[WebRTC] Received ICE candidate');
-          await pc.addIceCandidate(new RTCIceCandidate(signal.payload));
+          if (pc.remoteDescription) {
+            await pc.addIceCandidate(new RTCIceCandidate(signal.payload));
+          } else {
+            // Queue candidates until remote description is set
+            pendingCandidatesRef.current.push(signal.payload);
+          }
           break;
       }
     } catch (err) {
       console.error('[WebRTC] Signal handling error:', err);
     }
-  }, []);
+  }, [user?.id]);
 
   const { sendChatMessage, sendOffer, sendAnswer, sendIceCandidate, isConnected } = useStompSocket({
     sessionId,
@@ -132,7 +160,6 @@ export function VideoRoom({ sessionId, consent, onEnd }: VideoRoomProps) {
       setLocalStream(stream);
       if (localVideoRef.current) localVideoRef.current.srcObject = stream;
 
-      // Create peer connection
       const pc = new RTCPeerConnection(ICE_SERVERS);
       stream.getTracks().forEach((track) => pc.addTrack(track, stream));
 
@@ -232,8 +259,10 @@ export function VideoRoom({ sessionId, consent, onEnd }: VideoRoomProps) {
     URL.revokeObjectURL(url);
   };
 
+  const unreadCount = messages.length;
+
   return (
-    <div className="flex h-full">
+    <div className="flex h-full flex-col md:flex-row">
       {/* ====== VIDEO AREA ====== */}
       <div className="relative flex flex-1 flex-col bg-black">
         {/* Remote video (fullscreen) */}
@@ -248,14 +277,14 @@ export function VideoRoom({ sessionId, consent, onEnd }: VideoRoomProps) {
         {!remoteStream && (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center text-white/70">
-              <Users className="mx-auto mb-3 h-16 w-16" />
-              <p className="text-lg font-medium">Waiting for participant…</p>
+              <Users className="mx-auto mb-3 h-12 w-12 md:h-16 md:w-16" />
+              <p className="text-sm font-medium md:text-lg">Waiting for participant…</p>
             </div>
           </div>
         )}
 
         {/* Local video PiP */}
-        <div className="absolute bottom-20 right-4 h-36 w-48 overflow-hidden rounded-xl border-2 border-white/20 shadow-lg">
+        <div className="absolute bottom-20 right-3 h-24 w-32 overflow-hidden rounded-xl border-2 border-white/20 shadow-lg sm:h-28 sm:w-36 md:bottom-20 md:right-4 md:h-36 md:w-48">
           <video
             ref={localVideoRef}
             autoPlay
@@ -265,18 +294,18 @@ export function VideoRoom({ sessionId, consent, onEnd }: VideoRoomProps) {
           />
           {!isVideoEnabled && (
             <div className="absolute inset-0 flex items-center justify-center bg-muted">
-              <VideoOff className="h-8 w-8 text-muted-foreground" />
+              <VideoOff className="h-6 w-6 text-muted-foreground md:h-8 md:w-8" />
             </div>
           )}
         </div>
 
         {/* Controls bar */}
-        <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-3 rounded-2xl bg-black/60 px-5 py-3 backdrop-blur-md">
+        <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-2xl bg-black/60 px-3 py-2 backdrop-blur-md md:gap-3 md:px-5 md:py-3">
           <Button
             variant="ghost"
             size="icon"
             className={cn(
-              'rounded-full text-white hover:bg-white/20',
+              'h-10 w-10 rounded-full text-white hover:bg-white/20',
               !isVideoEnabled && 'bg-destructive/80 hover:bg-destructive/60'
             )}
             onClick={toggleVideo}
@@ -288,7 +317,7 @@ export function VideoRoom({ sessionId, consent, onEnd }: VideoRoomProps) {
             variant="ghost"
             size="icon"
             className={cn(
-              'rounded-full text-white hover:bg-white/20',
+              'h-10 w-10 rounded-full text-white hover:bg-white/20',
               !isAudioEnabled && 'bg-destructive/80 hover:bg-destructive/60'
             )}
             onClick={toggleAudio}
@@ -299,7 +328,7 @@ export function VideoRoom({ sessionId, consent, onEnd }: VideoRoomProps) {
           <Button
             variant="destructive"
             size="icon"
-            className="rounded-full"
+            className="h-10 w-10 rounded-full"
             onClick={handleEndSession}
           >
             <PhoneOff className="h-5 w-5" />
@@ -308,15 +337,20 @@ export function VideoRoom({ sessionId, consent, onEnd }: VideoRoomProps) {
           <Button
             variant="ghost"
             size="icon"
-            className="rounded-full text-white hover:bg-white/20"
+            className="relative h-10 w-10 rounded-full text-white hover:bg-white/20"
             onClick={() => setShowChat(!showChat)}
           >
             <MessageSquare className="h-5 w-5" />
+            {!showChat && unreadCount > 0 && (
+              <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
           </Button>
         </div>
 
         {/* Status badge */}
-        <div className="absolute left-4 top-4">
+        <div className="absolute left-3 top-3 md:left-4 md:top-4">
           <Badge variant={isConnected ? 'default' : 'destructive'} className="text-xs">
             {isConnected ? '🟢 Connected' : '🔴 Disconnected'}
           </Badge>
@@ -324,17 +358,17 @@ export function VideoRoom({ sessionId, consent, onEnd }: VideoRoomProps) {
 
         {/* Error */}
         {videoError && (
-          <div className="absolute left-1/2 top-12 -translate-x-1/2 rounded-lg bg-destructive/90 px-4 py-2 text-sm text-white">
+          <div className="absolute left-1/2 top-12 -translate-x-1/2 rounded-lg bg-destructive/90 px-3 py-2 text-xs text-white md:px-4 md:text-sm">
             {videoError}
           </div>
         )}
       </div>
 
-      {/* ====== CHAT SIDEBAR ====== */}
+      {/* ====== CHAT SIDEBAR / BOTTOM SHEET ====== */}
       {showChat && (
-        <div className="flex w-80 flex-col border-l bg-background">
+        <div className="flex h-[45vh] w-full flex-col border-t bg-background md:h-full md:w-80 md:border-l md:border-t-0">
           {/* Header */}
-          <div className="flex items-center justify-between border-b px-4 py-3">
+          <div className="flex items-center justify-between border-b px-3 py-2 md:px-4 md:py-3">
             <div className="flex items-center gap-2">
               <MessageSquare className="h-4 w-4 text-primary" />
               <h3 className="text-sm font-semibold">Chat</h3>
@@ -350,8 +384,8 @@ export function VideoRoom({ sessionId, consent, onEnd }: VideoRoomProps) {
           </div>
 
           {/* Messages */}
-          <ScrollArea className="flex-1 p-3" ref={scrollRef}>
-            <div className="space-y-3">
+          <ScrollArea className="flex-1 p-2 md:p-3" ref={scrollRef}>
+            <div className="space-y-2 md:space-y-3">
               {messages.length === 0 ? (
                 <p className="py-8 text-center text-xs text-muted-foreground">No messages yet</p>
               ) : (
@@ -381,7 +415,7 @@ export function VideoRoom({ sessionId, consent, onEnd }: VideoRoomProps) {
           </ScrollArea>
 
           {/* Input */}
-          <div className="border-t p-3">
+          <div className="border-t p-2 md:p-3">
             <div className="flex items-center gap-2">
               <Input
                 value={input}

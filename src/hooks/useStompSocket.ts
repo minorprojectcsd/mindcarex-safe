@@ -13,6 +13,7 @@ export interface StompChatMessage {
 
 export interface StompSignal {
   type: 'OFFER' | 'ANSWER' | 'ICE';
+  senderId?: string;
   payload: any;
 }
 
@@ -104,10 +105,10 @@ export function useStompSocket({
       if (!clientRef.current?.connected) return;
       clientRef.current.publish({
         destination: `/app/signal/${sessionId}`,
-        body: JSON.stringify(signal),
+        body: JSON.stringify({ ...signal, senderId: userId }),
       });
     },
-    [sessionId]
+    [sessionId, userId]
   );
 
   const sendOffer = useCallback(
