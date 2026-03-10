@@ -11,6 +11,7 @@ export interface RegisterRequest {
   password: string;
   role: UserRole;
   fullName: string;
+  [key: string]: any;
 }
 
 export interface AuthResponse {
@@ -19,20 +20,20 @@ export interface AuthResponse {
   userId?: string;
   email?: string;
   name?: string;
+  fullName?: string;
 }
 
 export const authService = {
   async login(data: LoginRequest): Promise<AuthResponse> {
     const response = await api.post<AuthResponse>('/api/auth/login', data);
     const { token, role } = response.data;
-    
-    // Store token, role, and userId in localStorage
+
     localStorage.setItem('token', token);
     localStorage.setItem('role', role);
     if (response.data.userId) {
       localStorage.setItem('userId', response.data.userId);
     }
-    
+
     return response.data;
   },
 

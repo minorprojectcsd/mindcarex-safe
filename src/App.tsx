@@ -27,11 +27,19 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 
 // Shared Pages
 import VideoSession from "./pages/VideoSession";
+import ChatSession from "./pages/ChatSession";
 import Settings from "./pages/Settings";
+import Profile from "./pages/Profile";
+
+// Analysis & Notification Pages
+import ChatAnalysis from "./pages/analysis/ChatAnalysis";
+import EmotionAnalysis from "./pages/analysis/EmotionAnalysis";
+import VoiceAnalysis from "./pages/analysis/VoiceAnalysis";
+import SessionSummaryPage from "./pages/analysis/SessionSummaryPage";
+import Notifications from "./pages/notifications/Notifications";
 
 const queryClient = new QueryClient();
 
-// Redirect based on role after login
 function RoleBasedRedirect() {
   const { user, isAuthenticated, isLoading } = useAuth();
 
@@ -76,75 +84,133 @@ const App = () => (
               <Route path="/dashboard" element={<RoleBasedRedirect />} />
 
               {/* Patient Routes */}
-              <Route 
-                path="/patient/dashboard" 
+              <Route
+                path="/patient/dashboard"
                 element={
                   <ProtectedRoute allowedRoles={['PATIENT']}>
                     <PatientDashboard />
                   </ProtectedRoute>
-                } 
+                }
               />
-              <Route 
-                path="/patient/book-appointment" 
+              <Route
+                path="/patient/book-appointment"
                 element={
                   <ProtectedRoute allowedRoles={['PATIENT']}>
                     <BookAppointment />
                   </ProtectedRoute>
-                } 
+                }
               />
-              <Route 
-                path="/patient/appointments" 
+              <Route
+                path="/patient/appointments"
                 element={
                   <ProtectedRoute allowedRoles={['PATIENT']}>
                     <MyAppointments />
                   </ProtectedRoute>
-                } 
+                }
               />
 
               {/* Doctor Routes */}
-              <Route 
-                path="/doctor/dashboard" 
+              <Route
+                path="/doctor/dashboard"
                 element={
                   <ProtectedRoute allowedRoles={['DOCTOR']}>
                     <DoctorDashboard />
                   </ProtectedRoute>
-                } 
+                }
               />
-              <Route 
-                path="/doctor/appointments" 
+              <Route
+                path="/doctor/appointments"
                 element={
                   <ProtectedRoute allowedRoles={['DOCTOR']}>
                     <DoctorAppointments />
                   </ProtectedRoute>
-                } 
+                }
               />
 
               {/* Admin Routes */}
-              <Route 
-                path="/admin/dashboard" 
+              <Route
+                path="/admin/dashboard"
                 element={
                   <ProtectedRoute allowedRoles={['ADMIN']}>
                     <AdminDashboard />
                   </ProtectedRoute>
-                } 
+                }
               />
 
               {/* Shared Protected Routes */}
-              <Route 
-                path="/video/:sessionId" 
+              <Route
+                path="/video/:sessionId"
                 element={
                   <ProtectedRoute>
                     <VideoSession />
                   </ProtectedRoute>
-                } 
+                }
               />
-              <Route 
-                path="/settings" 
+              <Route
+                path="/chat-session/:sessionId"
+                element={
+                  <ProtectedRoute>
+                    <ChatSession />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Analysis Routes */}
+              <Route
+                path="/analysis/chat/:sessionId?"
+                element={
+                  <ProtectedRoute allowedRoles={['DOCTOR', 'PATIENT']}>
+                    <ChatAnalysis />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/analysis/emotion/:sessionId?"
+                element={
+                  <ProtectedRoute allowedRoles={['DOCTOR', 'PATIENT']}>
+                    <EmotionAnalysis />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/analysis/voice/:sessionId?"
+                element={
+                  <ProtectedRoute allowedRoles={['DOCTOR', 'PATIENT']}>
+                    <VoiceAnalysis />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/analysis/summary/:sessionId?"
+                element={
+                  <ProtectedRoute allowedRoles={['DOCTOR']}>
+                    <SessionSummaryPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/notifications"
+                element={
+                  <ProtectedRoute>
+                    <Notifications />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/settings"
                 element={
                   <ProtectedRoute>
                     <Settings />
                   </ProtectedRoute>
-                } 
+                }
+              />
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <Profile />
+                  </ProtectedRoute>
+                }
               />
 
               {/* 404 */}

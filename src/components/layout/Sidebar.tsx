@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
@@ -7,35 +7,55 @@ import {
   Calendar,
   Video,
   Users,
-  FileText,
   Settings,
   LogOut,
   Shield,
   Sun,
   Moon,
   Menu,
-  X,
+  MessageSquareText,
+  ScanFace,
+  AudioLines,
+  FileText,
+  Bell,
+  MessageCircle,
+  UserCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTheme } from 'next-themes';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import mindcareLogo from '@/assets/mindcare-logo.png';
+import mindcareLogo from '@/assets/mindcare-brain.png';
+import emailNotificationService from '@/services/emailNotificationService';
 
 const patientNavItems = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/patient/dashboard' },
   { icon: Calendar, label: 'My Appointments', href: '/patient/appointments' },
   { icon: Video, label: 'Book Appointment', href: '/patient/book-appointment' },
+  { icon: MessageCircle, label: 'Chat Session', href: '/chat-session' },
+  { icon: Video, label: 'Chat + Video Session', href: '/video' },
+  { icon: MessageSquareText, label: 'Chat Analysis', href: '/analysis/chat' },
+  { icon: ScanFace, label: 'Emotion Analysis', href: '/analysis/emotion' },
+  { icon: AudioLines, label: 'Voice Analysis', href: '/analysis/voice' },
+  { icon: Bell, label: 'Notifications', href: '/notifications' },
+  { icon: UserCircle, label: 'My Profile', href: '/profile' },
   { icon: Settings, label: 'Settings', href: '/settings' },
 ];
 
 const doctorNavItems = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/doctor/dashboard' },
   { icon: Users, label: 'Appointments', href: '/doctor/appointments' },
-  { icon: Video, label: 'Start Session', href: '/video' },
+  { icon: MessageCircle, label: 'Chat Session', href: '/chat-session' },
+  { icon: Video, label: 'Chat + Video Session', href: '/video' },
+  { icon: MessageSquareText, label: 'Chat Analysis', href: '/analysis/chat' },
+  { icon: ScanFace, label: 'Emotion Analysis', href: '/analysis/emotion' },
+  { icon: AudioLines, label: 'Voice Analysis', href: '/analysis/voice' },
+  { icon: FileText, label: 'Session Summary', href: '/analysis/summary' },
+  { icon: Bell, label: 'Notifications', href: '/notifications' },
+  { icon: UserCircle, label: 'My Profile', href: '/profile' },
   { icon: Settings, label: 'Settings', href: '/settings' },
 ];
 
-function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
+function SidebarContent({ onNavigate, failedCount }: { onNavigate?: () => void; failedCount: number }) {
   const { user, logout } = useAuth();
   const location = useLocation();
   const { theme, setTheme } = useTheme();
@@ -46,7 +66,6 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <div className="flex h-full flex-col">
-      {/* Logo */}
       <div className="flex h-16 items-center gap-3 border-b border-sidebar-border px-6">
         <img src={mindcareLogo} alt="MindCare Logo" className="h-9 w-9 rounded-lg object-contain" />
         <div>
@@ -55,8 +74,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         </div>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 space-y-1 px-3 py-4">
+      <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
         {navItems.map((item) => {
           const isActive = location.pathname === item.href;
           return (
@@ -73,12 +91,16 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
             >
               <item.icon className="h-5 w-5" />
               {item.label}
+              {item.label === 'Notifications' && failedCount > 0 && (
+                <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-[10px] font-bold text-destructive-foreground">
+                  {failedCount}
+                </span>
+              )}
             </Link>
           );
         })}
       </nav>
 
-      {/* User section */}
       <div className="border-t border-sidebar-border p-4">
         <div className="mb-3 flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-light">
@@ -87,33 +109,18 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
             </span>
           </div>
           <div className="flex-1 truncate">
-            <p className="truncate text-sm font-medium text-sidebar-foreground">
-              {user.name}
-            </p>
+            <p className="truncate text-sm font-medium text-sidebar-foreground">{user.name}</p>
             <div className="flex items-center gap-1.5">
               <Shield className="h-3 w-3 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground capitalize">
-                {user.role.toLowerCase()}
-              </span>
+              <span className="text-xs text-muted-foreground capitalize">{user.role.toLowerCase()}</span>
             </div>
           </div>
         </div>
-        <Button
-          variant="ghost"
-          className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground"
-          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-        >
+        <Button variant="ghost" className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
           {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
         </Button>
-        <Button
-          variant="ghost"
-          className="w-full justify-start gap-2 text-muted-foreground hover:text-destructive"
-          onClick={() => {
-            onNavigate?.();
-            logout();
-          }}
-        >
+        <Button variant="ghost" className="w-full justify-start gap-2 text-muted-foreground hover:text-destructive" onClick={() => { onNavigate?.(); logout(); }}>
           <LogOut className="h-4 w-4" />
           Sign Out
         </Button>
@@ -125,12 +132,19 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 export function Sidebar() {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
+  const [failedCount, setFailedCount] = useState(0);
+
+  useEffect(() => {
+    if (!user) return;
+    emailNotificationService.getStatistics()
+      .then((s) => setFailedCount(s.failed))
+      .catch(() => {});
+  }, [user]);
 
   if (!user) return null;
 
   return (
     <>
-      {/* Mobile Header with Hamburger */}
       <div className="fixed left-0 right-0 top-0 z-50 flex h-14 items-center justify-between border-b border-border bg-background px-4 md:hidden">
         <div className="flex items-center gap-2">
           <img src={mindcareLogo} alt="MindCare Logo" className="h-8 w-8 rounded-lg object-contain" />
@@ -144,14 +158,13 @@ export function Sidebar() {
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="w-64 p-0 bg-sidebar">
-            <SidebarContent onNavigate={() => setOpen(false)} />
+            <SidebarContent onNavigate={() => setOpen(false)} failedCount={failedCount} />
           </SheetContent>
         </Sheet>
       </div>
 
-      {/* Desktop Sidebar */}
       <aside className="fixed left-0 top-0 z-40 hidden h-screen w-64 border-r border-sidebar-border bg-sidebar md:block">
-        <SidebarContent />
+        <SidebarContent failedCount={failedCount} />
       </aside>
     </>
   );
