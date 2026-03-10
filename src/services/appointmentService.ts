@@ -16,9 +16,10 @@ export interface PatientAppointment {
     specialization?: string;
   };
   startTime: string;
-  endTime: string;
+  endTime?: string;
   status: 'BOOKED' | 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
-  sessionId?: string;
+  sessionId?: string | null;
+  sessionStatus?: string | null;
   notes?: string;
 }
 
@@ -26,12 +27,14 @@ export interface DoctorAppointment {
   id: string;
   patient: {
     id: string;
-    fullName: string;
+    name?: string;
+    fullName?: string;
   };
   startTime: string;
-  endTime: string;
+  endTime?: string;
   status: 'BOOKED' | 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
-  sessionId?: string;
+  sessionId?: string | null;
+  sessionStatus?: string | null;
   notes?: string;
 }
 
