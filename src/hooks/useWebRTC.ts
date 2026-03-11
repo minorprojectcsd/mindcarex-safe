@@ -27,7 +27,7 @@ export function useWebRTC(config: WebRTCConfig) {
   
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
-  const frameIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const frameIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   // Initialize local media stream
@@ -63,7 +63,6 @@ export function useWebRTC(config: WebRTCConfig) {
     pc.onicecandidate = (event) => {
       if (event.candidate) {
         console.log('[WebRTC] ICE candidate:', event.candidate);
-        // Send to signaling server via socket
       }
     };
 
@@ -98,8 +97,6 @@ export function useWebRTC(config: WebRTCConfig) {
       await pc.setLocalDescription(offer);
 
       console.log('[WebRTC] Call started, offer created');
-      // Send offer via signaling server
-
       return offer;
     } catch (error) {
       console.error('[WebRTC] Start call error:', error);
