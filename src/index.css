@@ -1,5 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
-
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -7,8 +6,7 @@
 
 @layer base {
   :root {
-    /* Calm medical palette - teal/blue focus */
-    --background: 200 20% 98%;
+    --background: 0 0% 100%;
     --foreground: 210 25% 15%;
 
     --card: 0 0% 100%;
@@ -17,34 +15,27 @@
     --popover: 0 0% 100%;
     --popover-foreground: 210 25% 15%;
 
-    /* Primary: Calming teal */
     --primary: 174 62% 38%;
     --primary-foreground: 0 0% 100%;
     --primary-light: 174 50% 92%;
 
-    /* Secondary: Soft slate */
     --secondary: 210 20% 94%;
     --secondary-foreground: 210 25% 25%;
 
-    /* Muted: Gentle gray */
     --muted: 210 15% 95%;
     --muted-foreground: 210 12% 50%;
 
-    /* Accent: Warm coral for alerts/actions */
     --accent: 12 80% 62%;
     --accent-foreground: 0 0% 100%;
 
-    /* Success: Healing green */
     --success: 152 55% 45%;
     --success-foreground: 0 0% 100%;
     --success-light: 152 40% 92%;
 
-    /* Warning: Gentle amber */
     --warning: 38 92% 55%;
     --warning-foreground: 38 92% 15%;
     --warning-light: 38 70% 92%;
 
-    /* Destructive: Soft red */
     --destructive: 0 72% 55%;
     --destructive-foreground: 0 0% 100%;
     --destructive-light: 0 50% 95%;
@@ -55,11 +46,10 @@
 
     --radius: 0.75rem;
 
-    /* Custom tokens */
     --gradient-primary: linear-gradient(135deg, hsl(174 62% 38%), hsl(190 65% 45%));
     --gradient-card: linear-gradient(180deg, hsl(0 0% 100%), hsl(200 20% 98%));
-    --gradient-hero: linear-gradient(135deg, hsl(200 25% 96%), hsl(174 30% 94%));
-    
+    --gradient-hero: linear-gradient(135deg, hsl(0 0% 100%), hsl(0 0% 100%));
+
     --shadow-sm: 0 1px 2px 0 hsl(210 25% 15% / 0.04);
     --shadow-md: 0 4px 12px -1px hsl(210 25% 15% / 0.08);
     --shadow-lg: 0 10px 25px -3px hsl(210 25% 15% / 0.1);
@@ -76,7 +66,7 @@
   }
 
   .dark {
-    --background: 215 28% 10%;
+    --background: 0 0% 4%;
     --foreground: 210 20% 95%;
 
     --card: 215 25% 14%;
@@ -116,7 +106,7 @@
 
     --gradient-primary: linear-gradient(135deg, hsl(174 55% 50%), hsl(190 60% 55%));
     --gradient-card: linear-gradient(180deg, hsl(215 25% 14%), hsl(215 28% 12%));
-    --gradient-hero: linear-gradient(135deg, hsl(215 25% 12%), hsl(215 28% 10%));
+    --gradient-hero: linear-gradient(135deg, hsl(0 0% 4%), hsl(0 0% 2%));
 
     --sidebar-background: 215 25% 12%;
     --sidebar-foreground: 210 20% 90%;
@@ -135,7 +125,7 @@
   }
 
   html {
-    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-family: 'Roboto', 'Plus Jakarta Sans', system-ui, sans-serif;
     scroll-behavior: smooth;
   }
 
@@ -189,30 +179,16 @@
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes pulseSoft {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.7;
-  }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
 }

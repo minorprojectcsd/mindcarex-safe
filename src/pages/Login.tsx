@@ -6,26 +6,24 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import mindcareLogo from '@/assets/mindcare-logo.png';
+import mindcareLogo from '@/assets/mindcare-brain.png';
 
 export default function Login() {
   const navigate = useNavigate();
   const { login, isLoading } = useAuth();
   const { toast } = useToast();
-  
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       await login(email, password);
-      
-      // Get role from localStorage after login
+
       const role = localStorage.getItem('role');
-      
-      // Redirect based on role
+
       switch (role) {
         case 'ADMIN':
           navigate('/admin/dashboard');
@@ -39,8 +37,8 @@ export default function Login() {
           break;
       }
     } catch (error: any) {
-      const message = error?.response?.data?.message || 
-                      error?.message || 
+      const message = error?.response?.data?.message ||
+                      error?.message ||
                       'Invalid credentials. Please try again.';
       toast({
         title: 'Login failed',
@@ -49,7 +47,6 @@ export default function Login() {
       });
     }
   };
-
 
   return (
     <div className="gradient-hero flex min-h-screen items-center justify-center p-4">
@@ -61,7 +58,7 @@ export default function Login() {
           <p className="mt-1 text-muted-foreground">Mental Health Platform</p>
         </div>
 
-        <Card variant="elevated">
+        <Card>
           <CardHeader className="text-center">
             <CardTitle>Welcome back</CardTitle>
             <CardDescription>
@@ -120,7 +117,6 @@ export default function Login() {
                 )}
               </Button>
             </form>
-
 
             <p className="mt-6 text-center text-sm text-muted-foreground">
               Don't have an account?{' '}
