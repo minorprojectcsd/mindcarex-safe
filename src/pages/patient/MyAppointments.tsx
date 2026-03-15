@@ -1,7 +1,9 @@
+import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
-import { Calendar, ArrowLeft, Video, XCircle } from 'lucide-react';
+import { Calendar, ArrowLeft, Video, XCircle, Mail, MessageSquare } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -9,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { appointmentService, PatientAppointment } from '@/services/appointmentService';
+import { sessionService } from '@/services/sessionService';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -25,12 +28,29 @@ import {
 export default function MyAppointments() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  const { data: appointments, isLoading } = useQuery({
+  const joinSessionMutation = useMutation({
+    mutationFn: (appointmentId: string) => sessionService.joinSession(appointmentId),
+    onSuccess: (data) => {
+      navigate(`/video/${data.sessionId}`);
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Cannot join session',
+        description: error?.response?.data?.message || 'Session may not be started yet. Please wait for the doctor.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const { data: appointments, isLoading, error } = useQuery({
     queryKey: ['my-appointments'],
     queryFn: appointmentService.getMyAppointments,
+    enabled: user?.role === 'PATIENT',
     refetchInterval: 10000,
+    retry: (failureCount, err: any) => (err?.response?.status === 403 ? false : failureCount < 2),
   });
 
   const cancelMutation = useMutation({
@@ -44,6 +64,21 @@ export default function MyAppointments() {
     },
   });
 
+  useEffect(() => {
+    if ((error as any)?.response?.status === 403) {
+      toast({
+        title: 'Access denied',
+        description: 'Your session role does not match this page. Please sign in again.',
+        variant: 'destructive',
+      });
+      localStorage.removeItem('token');
+      localStorage.removeItem('role');
+      localStorage.removeItem('userId');
+      localStorage.removeItem('mindcarex_auth_user');
+      navigate('/login', { replace: true });
+    }
+  }, [error, navigate, toast]);
+
   const scheduled = appointments?.filter(a => ['BOOKED', 'SCHEDULED'].includes(a.status)) || [];
   const inProgress = appointments?.filter(a => a.status === 'IN_PROGRESS') || [];
   const active = [...inProgress, ...scheduled];
@@ -55,42 +90,51 @@ export default function MyAppointments() {
     const isBooked = ['BOOKED', 'SCHEDULED'].includes(appointment.status);
 
     return (
-      <div className="flex items-center justify-between rounded-lg border p-4">
+      <div className="flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between">
+        {/* Info row */}
         <div>
           <p className="font-medium">Dr. {appointment.doctor?.name || 'Doctor'}</p>
           {appointment.doctor?.specialization && (
-            <p className="text-xs text-muted-foreground">{appointment.doctor.specialization}</p>
+            <p className="text-xs text-muted-foreground">
+              {appointment.doctor.specialization}
+            </p>
           )}
           <p className="text-sm text-muted-foreground">
-            {format(new Date(appointment.startTime), 'EEEE, MMMM d, yyyy · h:mm a')}
+            {format(new Date(appointment.startTime), 'EEE, MMM d, yyyy · h:mm a')}
             {appointment.endTime && (
               <> — {format(new Date(appointment.endTime), 'h:mm a')}</>
             )}
           </p>
         </div>
+
+        {/* Actions row */}
         <div className="flex items-center gap-2">
-          <Badge
-            variant={
-              isLive ? 'default' :
-              isBooked ? 'secondary' :
-              appointment.status === 'COMPLETED' ? 'outline' :
-              'destructive'
-            }
-          >
+          <Badge variant={isLive ? 'default' : 'secondary'}>
             {isLive ? '🟢 Live' : appointment.status}
           </Badge>
-          {isLive && (
-            <Button size="sm" onClick={() => navigate(`/video/${appointment.sessionId || appointment.id}`)}>
-              <Video className="mr-1 h-3 w-3" />
-              Join Now
+          {(isBooked || appointment.status === 'COMPLETED') && (
+            <Button size="sm" variant="outline" onClick={() => navigate(`/analysis/chat/${appointment.sessionId || appointment.id}`)}>
+              <Mail className="mr-1 h-3 w-3" />
             </Button>
           )}
-          {isBooked && (
-            <>
-              <Button size="sm" variant="outline" onClick={() => navigate(`/video/${appointment.id}`)}>
+          {isLive && appointment.sessionId && (
+            <div className="flex gap-1">
+              <Button size="sm" onClick={() => navigate(`/video/${appointment.sessionId}`)}>
                 <Video className="mr-1 h-3 w-3" />
-                Join
+                Video
               </Button>
+              <Button size="sm" variant="outline" onClick={() => navigate(`/chat-session/${appointment.sessionId}`)}>
+                <MessageSquare className="mr-1 h-3 w-3" />
+                Chat
+              </Button>
+            </div>
+          )}
+          {isLive && !appointment.sessionId && (
+            <span className="text-xs text-muted-foreground">Session starting…</span>
+          )}
+          {isBooked && (
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-muted-foreground">Waiting for doctor</span>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive">
@@ -115,7 +159,7 @@ export default function MyAppointments() {
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
-            </>
+            </div>
           )}
         </div>
       </div>
@@ -144,7 +188,7 @@ export default function MyAppointments() {
         <Tabs defaultValue="active">
           <TabsList>
             <TabsTrigger value="active">Active ({active.length})</TabsTrigger>
-            <TabsTrigger value="completed">Completed ({completed.length})</TabsTrigger>
+            <TabsTrigger value="completed">Done ({completed.length})</TabsTrigger>
             <TabsTrigger value="cancelled">Cancelled ({cancelled.length})</TabsTrigger>
           </TabsList>
 
