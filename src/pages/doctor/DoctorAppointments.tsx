@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
-import { Calendar, ArrowLeft, Video, XCircle } from 'lucide-react';
+import { Calendar, ArrowLeft, Video, XCircle, MessageSquare } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -70,35 +70,34 @@ export default function DoctorAppointments() {
     const isBooked = ['BOOKED', 'SCHEDULED'].includes(appointment.status);
 
     return (
-      <div className="flex items-center justify-between rounded-lg border p-4">
+      <div className="flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="font-medium">{appointment.patient?.fullName || 'Patient'}</p>
+          <p className="font-medium">{appointment.patient?.fullName || appointment.patient?.name || 'Patient'}</p>
           <p className="text-sm text-muted-foreground">
-            {format(new Date(appointment.startTime), 'EEEE, MMMM d, yyyy · h:mm a')}
+            {format(new Date(appointment.startTime), 'EEE, MMM d, yyyy · h:mm a')}
             {appointment.endTime && (
               <> — {format(new Date(appointment.endTime), 'h:mm a')}</>
             )}
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Badge
-            variant={
-              isLive ? 'default' :
-              isBooked ? 'secondary' :
-              appointment.status === 'COMPLETED' ? 'outline' :
-              'destructive'
-            }
-          >
+          <Badge variant={isLive ? 'default' : 'secondary'}>
             {isLive ? '🟢 Live' : appointment.status}
           </Badge>
           {isLive && (
-            <Button size="sm" onClick={() => navigate(`/video/${appointment.sessionId || appointment.id}`)}>
-              <Video className="mr-1 h-3 w-3" />
-              Resume
-            </Button>
+            <div className="flex gap-1">
+              <Button size="sm" onClick={() => navigate(`/video/${appointment.sessionId || appointment.id}`)}>
+                <Video className="mr-1 h-3 w-3" />
+                Resume
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => navigate(`/chat-session/${appointment.sessionId || appointment.id}`)}>
+                <MessageSquare className="mr-1 h-3 w-3" />
+                Chat
+              </Button>
+            </div>
           )}
           {isBooked && (
-            <>
+            <div className="flex items-center gap-1">
               <Button
                 size="sm"
                 disabled={startSessionMutation.isPending}
@@ -117,7 +116,7 @@ export default function DoctorAppointments() {
                   <AlertDialogHeader>
                     <AlertDialogTitle>Cancel Appointment?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This will cancel the appointment with {appointment.patient?.fullName}. This action cannot be undone.
+                      This will cancel the appointment with {appointment.patient?.fullName || appointment.patient?.name}. This action cannot be undone.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -131,7 +130,7 @@ export default function DoctorAppointments() {
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
-            </>
+            </div>
           )}
         </div>
       </div>
@@ -154,7 +153,7 @@ export default function DoctorAppointments() {
         <Tabs defaultValue="active">
           <TabsList>
             <TabsTrigger value="active">Active ({active.length})</TabsTrigger>
-            <TabsTrigger value="completed">Completed ({completed.length})</TabsTrigger>
+            <TabsTrigger value="completed">Done ({completed.length})</TabsTrigger>
             <TabsTrigger value="cancelled">Cancelled ({cancelled.length})</TabsTrigger>
           </TabsList>
 
