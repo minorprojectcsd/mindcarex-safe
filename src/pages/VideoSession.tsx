@@ -410,7 +410,6 @@ export default function VideoSession() {
 
       <SessionSummaryModal
         open={showSummaryModal}
-        sessionId={sessionId || ''}
         onClose={() => setShowSummaryModal(false)}
         onSubmit={(data) => handleEndSession(data)}
         loading={endingSession}
